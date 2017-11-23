@@ -101,7 +101,7 @@ def Shuffle(F,**kwargs):
     if polarity_flips is None:
         polarity_flips=[1]*N
     elif polarity_flips == 'random':
-        polarity_flips=[random.choice([-1,1]) for _ in xrange(N)]
+        polarity_flips=[random.choice([-1,1]) for _ in range(N)]
     else:
         assert len(polarity_flips)==N
 
@@ -123,11 +123,11 @@ def Shuffle(F,**kwargs):
 
     if constraints_permutation is None:
 
-        constraints_permutation = range(M)
+        constraints_permutation = list(range(M))
 
     elif constraints_permutation == 'random':
 
-        constraints_permutation=range(M)
+        constraints_permutation=list(range(M))
         random.shuffle(constraints_permutation)
 
     else:

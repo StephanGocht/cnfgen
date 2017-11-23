@@ -6,7 +6,7 @@ from . import shufflereference
 import cnfformula
 
 import random
-import StringIO
+import io
 
 class TestReshuffler(TestCNFBase) :
     @staticmethod
@@ -18,8 +18,8 @@ class TestReshuffler(TestCNFBase) :
 
     def test_identity(self) :
         cnf = self.random_cnf(4,10,100)
-        variables_permutation = range(1,11)
-        constraints_permutation = range(100)
+        variables_permutation = list(range(1,11))
+        constraints_permutation = list(range(100))
         polarity_flips = [1]*10
         shuffle = cnfshuffle.Shuffle(cnf, 
                                      variables_permutation=variables_permutation,
@@ -30,7 +30,7 @@ class TestReshuffler(TestCNFBase) :
     def test_variable_permutation(self) :
         cnf = cnfformula.CNF([[(True,'x'),(True,'y'),(False,'z')]])
         variables_permutation = ['y','z','x']
-        constraints_permutation = range(1)
+        constraints_permutation = list(range(1))
         polarity_flips = [1]*3
         shuffle = cnfshuffle.Shuffle(cnf,
                                      variables_permutation=variables_permutation,
@@ -42,7 +42,7 @@ class TestReshuffler(TestCNFBase) :
     def test_polarity_flip(self) :
         cnf = cnfformula.CNF([[(True,'x'),(True,'y'),(False,'z')]])
         variables_permutation = list(cnf.variables())
-        constraints_permutation = range(1)
+        constraints_permutation = list(range(1))
         polarity_flips = [1,-1,-1]
         shuffle = cnfshuffle.Shuffle(cnf, 
                                      variables_permutation=variables_permutation,
@@ -54,7 +54,7 @@ class TestReshuffler(TestCNFBase) :
     def test_variable_and_polarity_flip(self) :
         cnf = cnfformula.CNF([[(True,'x'),(True,'y'),(False,'z')]])
         variables_permutation = ['y','z','x']
-        constraints_permutation = range(1)
+        constraints_permutation = list(range(1))
         polarity_flips = [1,-1,-1]
         shuffle = cnfshuffle.Shuffle(cnf,
                                      variables_permutation=variables_permutation,
@@ -67,11 +67,11 @@ class TestReshuffler(TestCNFBase) :
         cnf = self.random_cnf(4,10,100)
 
         # Generate random variable, clause and polarity permutations.
-        variables_permutation = range(10)
+        variables_permutation = list(range(10))
         random.shuffle(variables_permutation)
-        constraints_permutation = range(100)
+        constraints_permutation = list(range(100))
         random.shuffle(constraints_permutation)
-        polarity_flips = [random.choice([-1,1]) for x in xrange(10)]
+        polarity_flips = [random.choice([-1,1]) for x in range(10)]
 
         # variable_permutation has the permutation already applied.
         old_variables = list(cnf.variables())
@@ -115,8 +115,8 @@ class TestDimacsReshuffler(TestCNFBase) :
                                      variables_permutation='random',
                                      constraints_permutation='random')
         reference_output = shuffle.dimacs()+"\n"
-        input = StringIO.StringIO(cnf.dimacs())
-        dimacs_shuffle = StringIO.StringIO()
+        input = io.StringIO(cnf.dimacs())
+        dimacs_shuffle = io.StringIO()
         random.seed(44)
         shufflereference.stableshuffle(input, dimacs_shuffle)
         self.assertMultiLineEqual(dimacs_shuffle.getvalue(), reference_output)
@@ -126,8 +126,8 @@ class TestDimacsReshuffler(TestCNFBase) :
         random.seed('45')
         shuffle = cnfshuffle.Shuffle(cnf)
         reference_output = shuffle.dimacs()
-        input = StringIO.StringIO(cnf.dimacs())
-        dimacs_shuffle = StringIO.StringIO()
+        input = io.StringIO(cnf.dimacs())
+        dimacs_shuffle = io.StringIO()
         argv=['cnfshuffle', '--input', '-', '--output', '-', '--seed', '45']
         try:
             import sys
@@ -153,8 +153,8 @@ class TestDimacsReshuffler(TestCNFBase) :
                                      constraints_permutation=constraints_permutation,
                                      polarity_flips=polarity_flips)
         reference_output = shuffle.dimacs()+"\n"
-        input = StringIO.StringIO(cnf.dimacs())
-        dimacs_shuffle = StringIO.StringIO()
+        input = io.StringIO(cnf.dimacs())
+        dimacs_shuffle = io.StringIO()
         random.seed(43)
         shufflereference.stableshuffle(input, dimacs_shuffle,
                                        massimos_fancy_input,
@@ -164,25 +164,25 @@ class TestDimacsReshuffler(TestCNFBase) :
 
     def test_identity_equivalence(self) :
         cnf = self.random_cnf(2,3,2)
-        variable_permutation = range(3)
-        constraints_permutation = range(2)
+        variable_permutation = list(range(3))
+        constraints_permutation = list(range(2))
         polarity_flip = [1]*3
         self.equivalence_check_helper(cnf, variable_permutation, constraints_permutation, polarity_flip)
 
     def test_random_equivalence_small(self) :
         cnf = self.random_cnf(4,10,10)
-        variable_permutation = range(10)
+        variable_permutation = list(range(10))
         random.shuffle(variable_permutation)
-        constraints_permutation = range(10)
+        constraints_permutation = list(range(10))
         random.shuffle(constraints_permutation)
-        polarity_flip = [random.choice([-1,1]) for x in xrange(10)]
+        polarity_flip = [random.choice([-1,1]) for x in range(10)]
         self.equivalence_check_helper(cnf, variable_permutation, constraints_permutation, polarity_flip)
 
     def test_random_equivalence(self) :
         cnf = self.random_cnf(4,10,100)
-        variable_permutation = range(10)
+        variable_permutation = list(range(10))
         random.shuffle(variable_permutation)
-        constraints_permutation = range(100)
+        constraints_permutation = list(range(100))
         random.shuffle(constraints_permutation)
-        polarity_flip = [random.choice([-1,1]) for x in xrange(10)]
+        polarity_flip = [random.choice([-1,1]) for x in range(10)]
         self.equivalence_check_helper(cnf, variable_permutation, constraints_permutation, polarity_flip)

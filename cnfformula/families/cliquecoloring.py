@@ -87,10 +87,10 @@ def CliqueColoring(n,k,c):
 
     # clique members are connected by edges
     for v in range(1,n+1):
-        for i,j in combinations(range(1,k+1),2):
+        for i,j in combinations(list(range(1,k+1)),2):
             formula.add_clause([(False, Q(i,v)), (False, Q(j,v))])
-    for u,v in combinations(range(1,n+1),2):
-        for i,j in permutations(range(1,k+1),2):
+    for u,v in combinations(list(range(1,n+1)),2):
+        for i,j in permutations(list(range(1,k+1)),2):
             formula.add_clause([(True, E(u,v)), (False, Q(i,u)), (False, Q(j,v))])
 
     # every vertex v has exactly one colour
@@ -98,7 +98,7 @@ def CliqueColoring(n,k,c):
         formula.add_equal_to([R(v,ell) for ell in range(1,c+1)], 1)
 
     # neighbours have distinct colours
-    for u,v in combinations(range(1,n+1),2):
+    for u,v in combinations(list(range(1,n+1)),2):
         for ell in range(1,c+1):
             formula.add_clause([(False, E(u,v)), (False, R(u,ell)), (False, R(v,ell))])
     return formula

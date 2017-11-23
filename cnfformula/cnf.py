@@ -17,7 +17,7 @@ https://github.com/MassimoLauria/cnfgen.git
 """
 
 
-from __future__ import print_function
+
 from itertools import product,islice
 from itertools import combinations,combinations_with_replacement
 from collections import Counter
@@ -357,7 +357,7 @@ class CNF(object):
         # Add the compressed clause
         try:
             return tuple((1 if p else -1) * self._name2index[n] for p, n in literals)
-        except KeyError,error:
+        except KeyError as error:
             if not self.auto_add_variables:
                 raise ValueError("The clause contains unknown variable: {}".format(error))
             else:
@@ -462,7 +462,7 @@ class CNF(object):
         varnames=self._index2name
         
         # number of variables and clauses
-        N=len(varindex.keys())
+        N=len(list(varindex.keys()))
         
         # Consistency in the variable dictionary
         if N != len(varnames)-1:
@@ -590,7 +590,7 @@ class CNF(object):
         """Returns (a copy of) the list of variable names.
         """
         vars_iterator = iter(self._index2name)
-        vars_iterator.next()
+        next(vars_iterator)
         return vars_iterator
     
 
@@ -714,7 +714,7 @@ class CNF(object):
         .. [1] http://www.satlib.org/Benchmarks/SAT/satformat.ps
 
         """
-        from cStringIO import StringIO
+        from io import StringIO
         output = StringIO()
         self._dimacs_dump_clauses(output, export_header, extra_text)
         return output.getvalue()
@@ -752,7 +752,7 @@ class CNF(object):
             output.write("\n" + " ".join([str(l) for l in cls + (0,)]))
 
     def wcnf(self, export_header=True, extra_text=None):
-        from cStringIO import StringIO
+        from io import StringIO
         output = StringIO()
 
         # Count the number of variables and clauses
@@ -829,7 +829,7 @@ class CNF(object):
         .. [1] http://www.cril.univ-artois.fr/PB12/format.pdf
 
         """
-        from cStringIO import StringIO
+        from io import StringIO
         output = StringIO()
 
         # count the constraints (can't encode xor in OPB directly)
@@ -908,7 +908,7 @@ class CNF(object):
         return output.getvalue()
 
     def sage(self, export_header=True, extra_text=None, rational=False, opt=False):
-        from cStringIO import StringIO
+        from io import StringIO
         output = StringIO()
 
         output.write("p = MixedIntegerLinearProgram()\n") 
@@ -1037,7 +1037,7 @@ class CNF(object):
 \usepackage{listings}
 """
         
-        from cStringIO import StringIO
+        from io import StringIO
         output = StringIO()
         
         # formula header as a LaTeX comment
@@ -1499,23 +1499,23 @@ class CNF(object):
         
         if op == '==':
 
-            cnst = weighted_eq(*zip(weights,variables),value=value)
+            cnst = weighted_eq(*list(zip(weights,variables)),value=value)
 
         elif op == '>=':
 
-            cnst = weighted_geq(*zip(weights,variables),threshold=value)
+            cnst = weighted_geq(*list(zip(weights,variables)),threshold=value)
 
         elif op == '>':
 
-            cnst = weighted_geq(*zip(weights,variables),threshold=value+1)
+            cnst = weighted_geq(*list(zip(weights,variables)),threshold=value+1)
 
         elif op == '<=':
 
-            cnst = weighted_geq(*zip((-w for w in weights),variables),threshold= - value)
+            cnst = weighted_geq(*list(zip((-w for w in weights),variables)),threshold= - value)
 
         elif op == '<':
 
-            cnst = weighted_geq(*zip((-w for w in weights),variables),threshold= - value + 1)
+            cnst = weighted_geq(*list(zip((-w for w in weights),variables)),threshold= - value + 1)
 
         else:
             raise ValueError("Comparison operator must be among ==, >=, <=, >, <.")
@@ -1730,7 +1730,7 @@ class binary_mapping(object):
 
 
     def variables(self):
-        for v,b in product(self.Domain,xrange(0,self.Bits)):
+        for v,b in product(self.Domain,range(0,self.Bits)):
             yield self.var_name(v,b)
 
     def load_variables_to_formula(self,F):
@@ -1798,7 +1798,7 @@ class binary_mapping(object):
     def forbid_bitstring(self, i, bs):
         """Generates a clause that exclude 'i -> bs' mapping """
         return [ ( bs[b]==0, self.var_name(i,self.Bits-1-b))
-                 for b in xrange(self.Bits) ] 
+                 for b in range(self.Bits) ] 
 
     def forbid_image(self, i, j):
         """Generates a clause that exclude 'i -> j' mapping """

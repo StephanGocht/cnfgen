@@ -80,8 +80,8 @@ def PigeonholePrinciple(pigeons,holes,functional=False,onto=False):
         + php.header
     
     mapping=unary_mapping(
-        xrange(1,pigeons+1),
-        xrange(1,holes+1),
+        range(1,pigeons+1),
+        range(1,holes+1),
         var_name=var_name,
         injective = True,
         functional = functional,
@@ -179,8 +179,8 @@ def BinaryPigeonholePrinciple(pigeons,holes):
     bphp.header="Binary Pigeonhole Principle for {0} pigeons and {1} holes\n".format(pigeons,holes)\
                  + bphp.header
     
-    mapping=binary_mapping(xrange(1,pigeons+1),
-                           xrange(1,holes+1), injective = True)
+    mapping=binary_mapping(range(1,pigeons+1),
+                           range(1,holes+1), injective = True)
     bphp.mode_unchecked()
     mapping.load_variables_to_formula(bphp)
     mapping.load_clauses_to_formula(bphp)

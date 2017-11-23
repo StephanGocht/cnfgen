@@ -51,8 +51,8 @@ class TestCNFBase(unittest.TestCase):
         self.assertMultiLineEqual(output,opb)
         
     def assertCnfEquivalentModuloVariables(self, cnf1, cnf2):
-        print cnf1._constraints
-        print cnf2._constraints
+        print(cnf1._constraints)
+        print(cnf2._constraints)
         self.assertSetEqual(
             set(cnf1._compressed_clauses()),
             set(cnf2._compressed_clauses()))
@@ -88,8 +88,8 @@ class TestCNFBase(unittest.TestCase):
 
     @staticmethod
     def random_cnf(width, num_variables, num_clauses) :
-        return TestCNFBase.cnf_from_variables_and_clauses(xrange(1,num_variables+1), [
+        return TestCNFBase.cnf_from_variables_and_clauses(range(1,num_variables+1), [
                 [(random.choice([True,False]),x+1)
-                 for x in random.sample(xrange(num_variables),width)]
-                for C in xrange(num_clauses)])
+                 for x in random.sample(range(num_variables),width)]
+                for C in range(num_clauses)])
     

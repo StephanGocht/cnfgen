@@ -3,7 +3,7 @@
 """Implementation of the pigeonhole principle formulas
 """
 
-from __future__ import print_function
+
 
 
 from cnfformula.cnf import CNF
@@ -217,7 +217,7 @@ def StoneFormula(D,nstones):
     # Add variables in the appropriate order
     vertices=enumerate_vertices(D)
     position=dict((v,i) for (i,v) in enumerate(vertices))
-    stones=range(1,nstones+1)
+    stones=list(range(1,nstones+1))
 
     # Caching variable names
     color_vn = {}
@@ -330,7 +330,7 @@ def SparseStoneFormula(D,B):
 
     # add variables in the appropriate order
     vertices=enumerate_vertices(D)
-    stones=range(1,nstones+1)
+    stones=list(range(1,nstones+1))
     
     mapping = cnf.unary_mapping(vertices,stones,sparsity_pattern=B)
 
@@ -364,7 +364,7 @@ class PebblingCmdHelper:
         D= DirectedAcyclicGraphHelper.obtain_graph(args)
         try:
             return PebblingFormula(D)
-        except ValueError,e:
+        except ValueError as e:
             print("\nError: {}".format(e),file=sys.stderr)
             sys.exit(-1)
 
@@ -396,7 +396,7 @@ class StoneCmdHelper:
         D= DirectedAcyclicGraphHelper.obtain_graph(args)
         try:
             return StoneFormula(D,args.s)
-        except ValueError,e :
+        except ValueError as e :
             print("\nError: {}".format(e),file=sys.stderr)
             sys.exit(-1)
 
@@ -429,7 +429,7 @@ class SparseStoneCmdHelper:
         B= BipartiteGraphHelper.obtain_graph(args,suffix="_mapping")
         try:
             return SparseStoneFormula(D,B)
-        except ValueError,e:
+        except ValueError as e:
             print("\nError: {}".format(e),file=sys.stderr)
             sys.exit(-1)
 

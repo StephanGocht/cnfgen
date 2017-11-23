@@ -2,7 +2,7 @@
 # -*- coding:utf-8 -*-
 """Cnf formulas shuffling."""
 
-from __future__ import print_function
+
 
 import os
 
@@ -87,7 +87,7 @@ def command_line_utility(argv=sys.argv):
                          variable_permutation=None
                          if not args.no_variable_permutations else list(input_cnf.variables()),
                          constraint_permutation=None
-                         if not args.no_clause_permutations else range(len(input_cnf)),
+                         if not args.no_clause_permutations else list(range(len(input_cnf))),
                          polarity_flips=None if not args.no_polarity_flips else [1]*len(list(input_cnf.variables())))
     output_cnf._dimacs_dump_clauses(output=args.output,
                                     export_header=args.verbose)

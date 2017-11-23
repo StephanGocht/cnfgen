@@ -11,9 +11,9 @@ https://github.com/MassimoLauria/cnfgen.git
 
 """
 
-from __future__ import print_function
 
-    
+
+
 import sys
 import argparse
 
@@ -38,7 +38,7 @@ try: # NetworkX >= 1.10
     bipartite_gnmk_random_graph = networkx.bipartite.gnmk_random_graph
 
 except AttributeError: # Networkx < 1.10
-    
+
     from networkx import complete_bipartite_graph
     from networkx import bipartite_random_graph
     from networkx import bipartite_gnmk_random_graph
@@ -64,10 +64,10 @@ def register_cnfgen_subcommand(cls):
     implementation of a CNFgen subcommand.
 
     In particular the class must have four attributes
-    
-    + ``name`` the name of the CNF formula 
+
+    + ``name`` the name of the CNF formula
     + ``description`` a short description of the formulas
-    + ``setup_command_line`` a method that takes a command line parser 
+    + ``setup_command_line`` a method that takes a command line parser
       object and populates it with appropriate options.
     + ``build_cnf`` a method that takes the arguments and produce the CNF.
 
@@ -82,14 +82,14 @@ def register_cnfgen_subcommand(cls):
     class : any
         the class to test
 
-    
+
     Returns
     -------
     None
 
     Raises
     ------
-    AssertionError 
+    AssertionError
         when the class is not formula subcommand
     """
     assert \
@@ -132,7 +132,7 @@ def register_cnf_transformation_subcommand(cls):
     implementation of a CNFgen subcommand.
 
     In particular the class must have four attributes
-    
+
     + ``name`` the name of the CNF transformation
     + ``description`` a short description of the transformation
     + ``setup_command_line`` a method that takes a command line parser object and populates it with appropriate options.
@@ -149,14 +149,14 @@ def register_cnf_transformation_subcommand(cls):
     class : any
         the class to test
 
-    
+
     Returns
     -------
     None
 
     Raises
     ------
-    AssertionError 
+    AssertionError
         when the class is not a transformation subcommand
 
     """
@@ -188,14 +188,14 @@ def is_cnf_transformation_subcommand(cls):
 def find_methods_in_package(package,test, sortkey=None):
     """Explore a package for functions and methods that implement a specific test"""
 
-    
+
     import pkgutil
 
     result = []
 
     if sortkey == None :
-        sortkey = lambda x : x
-    
+        sortkey = lambda x : x.__name__
+
     for loader, module_name, _ in  pkgutil.walk_packages(package.__path__):
         module_name = package.__name__+"."+module_name
         if module_name in sys.modules:
@@ -208,7 +208,7 @@ def find_methods_in_package(package,test, sortkey=None):
                 result.append(obj)
     result.sort(key=sortkey)
     return result
-            
+
 
 
 
@@ -250,12 +250,12 @@ class DirectedAcyclicGraphHelper(GraphHelper):
             it is populated with options for input graphs
 
         suffix: string, optional
-            add a suffix to all input options. Useful if you need to input 
+            add a suffix to all input options. Useful if you need to input
             multiple graphs in the same command line (default: empty)
 
         require : bool, optional
-            enforce that at least one input specification is required. 
-            If it is not the case the standard input is the default input. 
+            enforce that at least one input specification is required.
+            If it is not the case the standard input is the default input.
             Not a good idea if we read multiple graphs in input.
         """
 
@@ -265,7 +265,7 @@ class DirectedAcyclicGraphHelper(GraphHelper):
                                      the formats, or generate it using one of the constructions included.""")
 
         gr=gr.add_mutually_exclusive_group(required=required)
-       
+
         gr.add_argument('--input'+suffix,'-i'+suffix,
                         type=argparse.FileType('r',0),
                         metavar="<input>",
@@ -318,7 +318,7 @@ class DirectedAcyclicGraphHelper(GraphHelper):
                 D=readGraph(getattr(args,'input'+suffix),
                             "dag",
                             getattr(args,'graphformat'+suffix))
-            except ValueError,e:
+            except ValueError as e:
                 print("ERROR ON '{}'. {}".format(getattr(args,'input'+suffix).name,e),file=sys.stderr)
                 exit(-1)
         else:
@@ -346,12 +346,12 @@ class SimpleGraphHelper(GraphHelper):
             it is populated with options for input graphs
 
         suffix: string, optional
-            add a suffix to all input options. Useful if you need to input 
+            add a suffix to all input options. Useful if you need to input
             multiple graphs in the same command line (default: empty)
 
         require : bool, optional
-            enforce that at least one input specification is required. 
-            If it is not the case the standard input is the default input. 
+            enforce that at least one input specification is required.
+            If it is not the case the standard input is the default input.
             Not a good idea if we read multiple graphs in input.
         """
 
@@ -375,7 +375,7 @@ class SimpleGraphHelper(GraphHelper):
                         type=argparse.FileType('r',0),
                         metavar="<input>",
                         default='-',
-                        help="""Read the graph from <input>. 
+                        help="""Read the graph from <input>.
                         Setting '<input>' to '-' reads the graph from standard
                         input.  (default: -)
                         """)
@@ -400,7 +400,7 @@ class SimpleGraphHelper(GraphHelper):
 
         gr.add_argument('--complete'+suffix,type=positive_int,action='store',metavar="<N>",
                         help="complete graph on N vertices")
-        
+
         gr.add_argument('--empty'+suffix,type=positive_int,action='store',metavar="<N>",
                         help="empty graph on N vertices")
 
@@ -461,7 +461,7 @@ class SimpleGraphHelper(GraphHelper):
             G=networkx.grid_graph(getattr(args,'grid'+suffix))
 
         elif getattr(args,'torus'+suffix) is not None:
-            
+
             G=networkx.grid_graph(getattr(args,'torus'+suffix),periodic=True)
 
         elif getattr(args,'complete'+suffix) is not None:
@@ -480,7 +480,7 @@ class SimpleGraphHelper(GraphHelper):
                 G=readGraph(getattr(args,'input'+suffix),
                             "simple",
                             getattr(args,'graphformat'+suffix))
-            except ValueError,e:
+            except ValueError as e:
                 print("ERROR ON '{}'. {}".format(
                     getattr(args,'input'+suffix).name,e),
                       file=sys.stderr)
@@ -506,7 +506,7 @@ class SimpleGraphHelper(GraphHelper):
                 G.name = "{} with {} new random edges".format(G.name,k)
 
         if getattr(args,'splitedge'+suffix):
-            (u,v) = G.edges_iter().next()
+            (u,v) = next(G.edges_iter())
             G.remove_edge(u,v)
             for i in range(G.order()+1):
                 if i not in G:
@@ -539,12 +539,12 @@ class BipartiteGraphHelper(GraphHelper):
             it is populated with options for input graphs
 
         suffix: string, optional
-            add a suffix to all input options. Useful if you need to input 
+            add a suffix to all input options. Useful if you need to input
             multiple graphs in the same command line (default: empty)
 
         require : bool, optional
-            enforce that at least one input specification is required. 
-            If it is not the case the standard input is the default input. 
+            enforce that at least one input specification is required.
+            If it is not the case the standard input is the default input.
             Not a good idea if we read multiple graphs in input.
         """
 
@@ -587,7 +587,7 @@ class BipartiteGraphHelper(GraphHelper):
                     if len(values)<2:
                         raise ValueError("'bshift' requires two positive int parameters or more.")
 
-                    
+
                     N,M,pattern= values[0],values[1],sorted(values[2:])
 
                     for i in range(len(pattern)-1):
@@ -599,7 +599,7 @@ class BipartiteGraphHelper(GraphHelper):
 
                     if any([ x < 1 or x > M for x in pattern]):
                         raise ValueError("in v(1),v(2)... we need 1 <= v(i) <= M.")
-                    
+
                 except ValueError as e:
                     raise argparse.ArgumentError(self,e.message)
                 setattr(args, self.dest, (N,M,pattern))
@@ -631,7 +631,7 @@ class BipartiteGraphHelper(GraphHelper):
                         another way to read from standard input.  (default: -)
                         """)
 
-                
+
         gr.add_argument('--bp'+suffix,nargs=3,action=IntIntFloat,metavar=('l','r','p'),
                         help="Random bipartite graph with independent edges")
 
@@ -652,7 +652,7 @@ class BipartiteGraphHelper(GraphHelper):
 
 
         gr=parser.add_argument_group("Modify the graph structure")
-        
+
         gr.add_argument('--plantbiclique'+suffix,type=positive_int,nargs=2,action='store',metavar=('l','r'),
                         help="Plant a random (l,r)-bipartite clique")
 
@@ -660,7 +660,7 @@ class BipartiteGraphHelper(GraphHelper):
                         help="Add k NEW random edges to the graph (applied in the end)")
 
         gr=parser.add_argument_group("File I/O options",
-                                     description=""" 
+                                     description="""
                                      Additional option regarding the input and output of the files
                                      containing the graph structure.
                                      """)
@@ -708,9 +708,9 @@ class BipartiteGraphHelper(GraphHelper):
 
             N,M,pattern = getattr(args,"bshift"+suffix)
             G=bipartite_shift(N,M,pattern)
-            
+
         elif getattr(args,"bcomplete"+suffix) is not None:
-            
+
             l,r = getattr(args,"bcomplete"+suffix)
             G=complete_bipartite_graph(l,r)
             # Workaround: the bipartite labels are missing in old version of networkx
@@ -718,7 +718,7 @@ class BipartiteGraphHelper(GraphHelper):
                 G.add_node(i,bipartite=0)
             for i in range(l,l+r):
                 G.add_node(i,bipartite=1)
-            
+
         elif getattr(args,"graphformat"+suffix) is not None:
 
             try:
@@ -727,14 +727,14 @@ class BipartiteGraphHelper(GraphHelper):
                 G=readGraph(getattr(args,"input"+suffix),
                             "bipartite",
                             getattr(args,"graphformat"+suffix))
-            except ValueError,e:
+            except ValueError as e:
                 print("ERROR ON '{}'. {}".format(getattr(args,"input"+suffix).name,e),file=sys.stderr)
                 exit(-1)
-                            
+
         else:
             raise RuntimeError("Command line does not specify a bipartite graph")
-            
-        
+
+
 
         # Graph modifications
         if getattr(args,"plantbiclique"+suffix) is not None:
@@ -757,8 +757,8 @@ class BipartiteGraphHelper(GraphHelper):
 
             if hasattr(G, 'name'):
                 G.name = "{} with {} new random edges".format(G.name,k)
-            
-            
+
+
         # Output the graph is requested
         if getattr(args,"savegraph"+suffix) is not None:
             writeGraph(G,

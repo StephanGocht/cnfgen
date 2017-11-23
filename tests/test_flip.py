@@ -6,7 +6,7 @@ from cnfformula import Shuffle,cnfgen,CNF
 from cnfformula.utils.dimacstransform import command_line_utility as dimacstransform
 
 import random
-import StringIO
+import io
 
 def FlipPolarity(F):
     n = sum(1 for _ in F.variables())
@@ -34,8 +34,8 @@ class TestDimacsFlip(TestCNFBase) :
         
         reference_output = shuffle.dimacs(export_header=False) + '\n'
 
-        input_stream = StringIO.StringIO(cnf.dimacs())
-        dimacs_flip = StringIO.StringIO()
+        input_stream = io.StringIO(cnf.dimacs())
+        dimacs_flip = io.StringIO()
 
         argv=['dimacstransform', '-q','--input', '-', '--output', '-', 'flip']
         try:

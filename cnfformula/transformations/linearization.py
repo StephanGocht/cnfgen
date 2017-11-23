@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
 
-from __future__ import print_function
+
 
 from ..cnf import CNF, weighted_eq, weighted_geq
 

@@ -96,11 +96,11 @@ def SubgraphFormula(graph,templates, symmetric=False):
     var_name = lambda i,j: "S_{{{0},{1}}}".format(i,j)
 
     if symmetric:
-        mapping = unary_mapping(range(k),range(N),var_name=var_name,
+        mapping = unary_mapping(list(range(k)),list(range(N)),var_name=var_name,
                                 functional=True,injective=True,
                                 nondecreasing=True)
     else:
-        mapping = unary_mapping(range(k),range(N),var_name=var_name,
+        mapping = unary_mapping(list(range(k)),list(range(N)),var_name=var_name,
                                 functional=True,injective=True,
                                 nondecreasing=False)
 
@@ -133,11 +133,11 @@ def SubgraphFormula(graph,templates, symmetric=False):
 
         if symmetric:
             # Using non-decreasing map to represent a subset
-            localmaps = product(combinations(range(k),2),
-                                combinations(range(N),2))
+            localmaps = product(combinations(list(range(k)),2),
+                                combinations(list(range(N)),2))
         else:
-            localmaps = product(combinations(range(k),2),
-                                permutations(range(N),2))
+            localmaps = product(combinations(list(range(k)),2),
+                                permutations(list(range(N)),2))
        
 
         for (i1,i2),(j1,j2) in localmaps:
@@ -202,14 +202,14 @@ def BinaryCliqueFormula(G,k):
     F=CNF()
     F.header="Binary {0}-clique formula\n".format(k) + F.header
     
-    mapping=CNF.binary_mapping(xrange(1,k+1), G.nodes(),
+    mapping=CNF.binary_mapping(range(1,k+1), G.nodes(),
                                injective = True,
                                nondecreasing = True)
 
     mapping.load_variables_to_formula(F)
     mapping.load_clauses_to_formula(F)
 
-    for (i1,i2),(v1,v2) in product(combinations(xrange(1,k+1),2),
+    for (i1,i2),(v1,v2) in product(combinations(range(1,k+1),2),
                                    combinations(G.nodes(),2)):
     
         if not G.has_edge(v1,v2):

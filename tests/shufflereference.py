@@ -1,4 +1,4 @@
-from __future__ import print_function
+
 import random
 
 def stableshuffle(inputfile,
@@ -33,7 +33,7 @@ def stableshuffle(inputfile,
 
             # Clause permutation
             if clauses_permutation==None:
-                clauses_permutation=range(m)
+                clauses_permutation=list(range(m))
                 random.shuffle(clauses_permutation)
             
             clause_buffer=[None]*m
@@ -67,7 +67,7 @@ def stableshuffle(inputfile,
 def substitution(n, variables_permutation = None,
                  polarity_flips = None) :
     if variables_permutation is None :
-        variables_permutation = range(1,n+1)
+        variables_permutation = list(range(1,n+1))
         random.shuffle(variables_permutation)
     else:
         assert len(variables_permutation)==n
@@ -75,7 +75,7 @@ def substitution(n, variables_permutation = None,
     vars = [0] + variables_permutation
 
     if polarity_flips is None :
-        polarity_flips = [random.choice([-1,1]) for x in xrange(n)]
+        polarity_flips = [random.choice([-1,1]) for x in range(n)]
     else:
         assert len(polarity_flips)==n
 
@@ -84,7 +84,7 @@ def substitution(n, variables_permutation = None,
     subst=[None]*(2*n+1)
     for i,p in enumerate(vars):
         subst[p]=i*flip[p]
-    for i in xrange(1,n+1):
+    for i in range(1,n+1):
         subst[-i]= -subst[i]
 
     return subst
