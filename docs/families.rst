@@ -1,4 +1,4 @@
-   
+
 Formula families
 ================
 
@@ -23,7 +23,7 @@ All formula  generators are  accessible from  the :py:mod:`cnfformula`
 package, but their implementation  (and documentation) is split across
 the following modules. This makes it easy to
 `add new formula families. <addfamily.html>`_
-   
+
 .. toctree::
    :titlesonly:
 
@@ -33,6 +33,7 @@ the following modules. This makes it easy to
    Ordering principles <cnfformula.families.ordering>
    Pebbling formulas <cnfformula.families.pebbling>
    Pigeonhole principle <cnfformula.families.pigeonhole>
+   Bin Packing <cnfformula.families.binpacking>
    Ramsey numbers <cnfformula.families.ramsey>
    Random CNFs <cnfformula.families.randomformulas>
    Clique and Subgraph formulas <cnfformula.families.subgraph>
@@ -53,7 +54,7 @@ command ``cnfgen <generator_name> --help``.
 Recall the  example above, in  hich we produced a  pigeohole principle
 formula for 10  pigeons and 9 holes.  We can get the  same formula in
 DIMACS format with the following command line.
-   
+
 .. code-block:: shell
 
    $ cnfgen php 10 9
@@ -89,4 +90,4 @@ DIMACS format with the following command line.
    -72 -81 0
    -72 -90 0
    -81 -90 0
-                
+

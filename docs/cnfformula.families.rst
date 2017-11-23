@@ -12,6 +12,7 @@ Submodules
    cnfformula.families.ordering
    cnfformula.families.pebbling
    cnfformula.families.pigeonhole
+   cnfformula.families.binpacking
    cnfformula.families.ramsey
    cnfformula.families.randomformulas
    cnfformula.families.simple
