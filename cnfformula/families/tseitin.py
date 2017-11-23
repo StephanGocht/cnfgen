@@ -13,7 +13,7 @@ import cnfformula.cmdline
 import cnfformula.families
 
 @cnfformula.families.register_cnf_generator
-def TseitinFormula(graph,charges=None):
+def TseitinFormula(graph,charges=None, encoding=None):
     """Build a Tseitin formula based on the input graph.
 
     Odd charge is put on the first vertex by default, unless other
@@ -32,11 +32,12 @@ def TseitinFormula(graph,charges=None):
 
     if len(charges)<len(V):
         charges=charges+[0]*(len(V)-len(charges))  # pad with even charges
+        assert False
 
     # init formula
     tse=CNF()
     edgename = { }
-    
+
     for (u,v) in sorted(graph.edges(),key=sorted):
         edgename[(u,v)] =  "E_{{{0},{1}}}".format(u,v)
         edgename[(v,u)] =  "E_{{{0},{1}}}".format(u,v)
@@ -45,10 +46,24 @@ def TseitinFormula(graph,charges=None):
     tse.mode_strict()
     # add constraints
     for v,charge in zip(V,charges):
-        
+
         # produce all clauses and save half of them
         names = [ edgename[(u,v)] for u in neighbors(graph,v) ]
-        tse.add_parity(names,charge)
+        if encoding == None:
+            tse.add_parity(names,charge)
+        elif encoding == "extendedPBAnyHelper":
+            def toArgs(listOfTuples, operator, degree):
+                return list(sum(listOfTuples, ())) + [operator, degree]
+
+            terms = list(map(lambda x: (1, x), names))
+            w = len(terms)
+            k = w // 2
+            for i in range(k):
+                helper = ("xor_helper", i)
+                tse.add_variable(helper)
+                terms.append((2, helper))
+            degree = 2 * k + (charge % 2)
+            tse.add_linear(*toArgs(terms, "==", degree))
 
     return tse
 
@@ -68,13 +83,17 @@ class TseitinCmdHelper(object):
         - `parser`: parser to load with options.
         """
         parser.add_argument('--charge',metavar='<charge>',default='first',
-                            choices=['first','random','randomodd','randomeven'],
+                            choices=['first','random','randomodd','randomeven', '0','1'],
                             help="""charge on the vertices.
                                     `first'  puts odd charge on first vertex;
                                     `random' puts a random charge on vertices;
                                     `randomodd' puts random odd  charge on vertices;
                                     `randomeven' puts random even charge on vertices.
                                      """)
+        group = parser.add_mutually_exclusive_group()
+        group.add_argument("--extendedPBAnyHelper", action='store_true',
+            help="Encode xor as pseudo boolean constraint with extended variables.")
+
         SimpleGraphHelper.setup_command_line(parser)
 
     @staticmethod
@@ -93,6 +112,9 @@ class TseitinCmdHelper(object):
 
             charge=[1]+[0]*(G.order()-1)
 
+        elif args.charge in ['0', '1']:
+            charge = [int(args.charge)] * G.number_of_nodes()
+
         else: # random vector
             charge=[random.randint(0,1) for _ in range(G.order()-1)]
 
@@ -107,4 +129,8 @@ class TseitinCmdHelper(object):
             else:
                 raise ValueError('Illegal charge specification on command line')
 
-        return TseitinFormula(G,charge)
+        encoding = None
+        if args.extendedPBAnyHelper:
+            encoding = "extendedPBAnyHelper"
+
+        return TseitinFormula(G, charge, encoding)
