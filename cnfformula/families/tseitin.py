@@ -12,6 +12,8 @@ import random
 import cnfformula.cmdline
 import cnfformula.families
 
+import math
+
 @cnfformula.families.register_cnf_generator
 def TseitinFormula(graph,charges=None, encoding=None):
     """Build a Tseitin formula based on the input graph.
@@ -51,17 +53,35 @@ def TseitinFormula(graph,charges=None, encoding=None):
         names = [ edgename[(u,v)] for u in neighbors(graph,v) ]
         if encoding == None:
             tse.add_parity(names,charge)
-        elif encoding == "extendedPBAnyHelper":
+        else:
             def toArgs(listOfTuples, operator, degree):
                 return list(sum(listOfTuples, ())) + [operator, degree]
 
             terms = list(map(lambda x: (1, x), names))
             w = len(terms)
             k = w // 2
-            for i in range(k):
-                helper = ("xor_helper", i)
-                tse.add_variable(helper)
-                terms.append((2, helper))
+
+            if encoding == "extendedPBAnyHelper":
+                for i in range(k):
+                    helper = ("xor_helper", i, v)
+                    tse.add_variable(helper)
+                    terms.append((2, helper))
+            elif encoding == "extendedPBOneHelper":
+                helpers = list()
+                for i in range(k):
+                    helper = ("xor_helper", i, v)
+                    helpers.append(helper)
+                    tse.add_variable(helper)
+                    terms.append(((i+1)*2, helper))
+                tse.add_linear(*toArgs([(1,x) for x in helpers], "<=", 1))
+            elif encoding == "extendedPBExpHelper":
+                for i in range(math.ceil(math.log(k,2)) + 1):
+                    helper = ("xor_helper", i, v)
+                    tse.add_variable(helper)
+                    terms.append((2**i * 2, helper))
+            else:
+                raise ValueError("Invalid encoding '%s'" % encoding)
+
             degree = 2 * k + (charge % 2)
             tse.add_linear(*toArgs(terms, "==", degree))
 
@@ -93,6 +113,14 @@ class TseitinCmdHelper(object):
         group = parser.add_mutually_exclusive_group()
         group.add_argument("--extendedPBAnyHelper", action='store_true',
             help="Encode xor as pseudo boolean constraint with extended variables.")
+        group.add_argument("--extendedPBOneHelper", action='store_true',
+            help="""Encode xor as pseudo boolean constraint with extended
+                variables, such that exactly one of the extension variables ist
+                true.""")
+        group.add_argument("--extendedPBExpHelper", action='store_true',
+            help="""Encode xor as pseudo boolean constraint with extended
+                variables, using powers of two encoding.""")
+
 
         SimpleGraphHelper.setup_command_line(parser)
 
@@ -132,5 +160,9 @@ class TseitinCmdHelper(object):
         encoding = None
         if args.extendedPBAnyHelper:
             encoding = "extendedPBAnyHelper"
+        elif args.extendedPBOneHelper:
+            encoding = "extendedPBOneHelper"
+        elif args.extendedPBExpHelper:
+            encoding = "extendedPBExpHelper"
 
         return TseitinFormula(G, charge, encoding)

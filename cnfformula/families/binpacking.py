@@ -48,14 +48,15 @@ def BinPacking(numBins, binSize, items):
         for item in range(len(items)):
             F.add_variable((item, aBin))
 
-    def toArgs(listOfTuples):
-        return list(sum(listOfTuples, ()))
+    def toArgs(listOfTuples, operator, degree):
+        return list(sum(listOfTuples, ())) + [operator, degree]
 
     # Each item is in at leat one bin
     for item in range(len(items)):
         F.add_linear(
-            *(toArgs([(1, (item, aBin)) for aBin in range(numBins)])
-                + [">=", 1])
+            *toArgs([(1, (item, aBin)) for aBin in range(numBins)],
+                    ">=", 1
+                )
         )
 
     # Each bin has no more than size items

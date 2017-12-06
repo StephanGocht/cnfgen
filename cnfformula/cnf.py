@@ -7,7 +7,7 @@ order to be printed in DIMACS or LaTeX formats. Such formulas are
 ready to be fed to sat solvers.
 
 The module implements the `CNF` object, which is the main entry point
-to the `cnfformula` library. 
+to the `cnfformula` library.
 
 
 
@@ -28,6 +28,9 @@ from math import ceil,log,factorial
 
 from . import prjdata as pd
 from .graphs import bipartite_sets,neighbors
+
+class DuplicateVariable(RuntimeWarning):
+    pass
 
 class CNF(object):
     """Propositional formulas in conjunctive normal form.
@@ -131,7 +134,7 @@ class CNF(object):
           - :py:attr:`allow_literal_repetition`
           - :py:attr:`allow_opposite_literals`
           - :py:attr:`auto_add_variables`
- 
+
         """
         self.allow_literal_repetitions = False
         self.allow_opposite_literals   = False
@@ -144,12 +147,12 @@ class CNF(object):
           - :py:meth:`CNF.allow_literal_repetitions`
           - :py:meth:`CNF.allow_opposite_literals`
           - :py:meth:`CNF.auto_add_variables`
- 
+
         """
         self.allow_literal_repetitions = True
         self.allow_opposite_literals   = True
         self.auto_add_variables        = True
-        
+
     def mode_default(self):
         """Constraint are added with default rules
 
@@ -159,7 +162,7 @@ class CNF(object):
 
         and sets to `True`:
           - :py:meth:`CNF.auto_add_variables`
- 
+
         """
         self.allow_literal_repetitions   = False
         self.allow_opposite_literals     = False
@@ -168,7 +171,7 @@ class CNF(object):
     @property
     def allow_literal_repetitions(self):
         """True if and only if the constraint can have repeated literal.
-        
+
         Useful for sanity check. If the flag is `False` and the
         clause contain two copies of the same literal, then
         `ValueError` is raised. (default: False)
@@ -184,7 +187,7 @@ class CNF(object):
             self._check_and_compress_literals = self._check_and_compress_literals_unsafe
         else:
             self._check_and_compress_literals = self._check_and_compress_literals_safe
-    
+
     @property
     def allow_opposite_literals(self):
         """True if and only if the clause can have opposite literals.
@@ -204,7 +207,7 @@ class CNF(object):
             self._check_and_compress_literals = self._check_and_compress_literals_unsafe
         else:
             self._check_and_compress_literals = self._check_and_compress_literals_safe
-    
+
     @property
     def auto_add_variables(self):
         """If `True` the clause can contain new variables.
@@ -225,8 +228,8 @@ class CNF(object):
             self._check_and_compress_literals = self._check_and_compress_literals_unsafe
         else:
             self._check_and_compress_literals = self._check_and_compress_literals_safe
-            
-    
+
+
     #
     # Implementation of some standard methods
     #
@@ -249,7 +252,7 @@ class CNF(object):
         """
         for clause in self._compressed_clauses():
             yield self._uncompress_literals(clause)
-                
+
     def __str__(self):
         """String representation of the formula
         """
@@ -265,7 +268,7 @@ class CNF(object):
 
         return self._length
 
-    
+
     #
     # Internal implementation methods, use at your own risk!
     #
@@ -279,7 +282,7 @@ class CNF(object):
         Returns
         -------
         a list of pairs (bool,string).
-        
+
         Examples
         --------
         >>> c=CNF()
@@ -460,10 +463,10 @@ class CNF(object):
         """
         varindex=self._name2index
         varnames=self._index2name
-        
+
         # number of variables and clauses
         N=len(list(varindex.keys()))
-        
+
         # Consistency in the variable dictionary
         if N != len(varnames)-1:
             return False
@@ -496,7 +499,7 @@ class CNF(object):
     #
     # High level API
     #
-    def add_variable(self,var,description=None):
+    def add_variable(self,var,description=None,failOnDuplicate=True):
         """Add a variable to the formula (if not already resent).
 
         The variable must be `hashable`. I.e. it must be usable as key
@@ -516,6 +519,9 @@ class CNF(object):
                 # name correpsond to the last variable so far
                 self._index2name.append(var)
                 self._name2index[var] = len(self._index2name)-1
+            elif failOnDuplicate:
+                raise DuplicateVariable(
+                    "Tried to add duplicate of variable %s" % str(var))
         except TypeError:
             raise TypeError("%s is not a legal variable name" %var)
 
@@ -530,7 +536,7 @@ class CNF(object):
         E.g. (not x3) or x4 or (not x2) is encoded as
              [(False,u"x3"),(True,u"x4"),(False,u"x2")]
 
-        
+
         By default all variable mentioned in the clause will be added
         to the list of variables of the CNF, in the order of
         appearance in the clauses. The default applies as long as
@@ -542,10 +548,10 @@ class CNF(object):
         enforce either more or less strict rules with
         :py:meth:`mode_strict`, :py:meth:`mode_unchecked`, and
         :py:meth:`mode_default`.
-        
+
         Parameters
         ----------
-        clause: list of (bool,str) 
+        clause: list of (bool,str)
             the clause to be added in the CNF
 
             A clause with k literals is a list with k pairs.
@@ -553,12 +559,12 @@ class CNF(object):
             encoded strings with variable names.
 
             Clause may contain repeated or opposite literal, but this
-            behavior can be modified by the optional flags. 
+            behavior can be modified by the optional flags.
 
             Clauses are added with repetition, i.e. if the same clause
             is added twice then it will occur twice in the
             formula too.
- 
+
 
         See Also
         --------
@@ -574,7 +580,7 @@ class CNF(object):
         KeyError
             in case clause insertion is unchecked and the clause
             contains a variable which is unknown to the formula.
-        
+
         ValueError
             in case the sequence of literals do not satisfies the rules.
 
@@ -584,7 +590,7 @@ class CNF(object):
         self._constraints.append( disj(*self._check_and_compress_literals(clause)))
         if self._length is not None:
             self._length += 1
-  
+
 
     def variables(self):
         """Returns (a copy of) the list of variable names.
@@ -592,7 +598,7 @@ class CNF(object):
         vars_iterator = iter(self._index2name)
         next(vars_iterator)
         return vars_iterator
-    
+
 
     def is_satisfiable(self, cmd=None, sameas=None, verbose=0):
         """Determines whether a CNF is satisfiable or not.
@@ -776,13 +782,13 @@ class CNF(object):
         # Opt
         for var in range(1,n+1):
             output.write("1 {} 0\n".format(var))
-            
+
         # Clauses
         for cls in self._compressed_clauses():
             output.write(" ".join([str(l) for l in (top,) + cls + (0,)])+"\n")
 
         return output.getvalue()
-            
+
     def opb(self, export_header=True, extra_text=None, opt=False):
         """Produce the OPB encoding of the formula
 
@@ -840,7 +846,7 @@ class CNF(object):
                 nconstraints += c.n_clauses()
             else:
                 nconstraints += 1
-                
+
         output.write("* #variable= {} #constraint= {}\n*\n".format(
             nvariables,nconstraints))
 
@@ -855,7 +861,7 @@ class CNF(object):
 
         if opt:
             output.write("min: " + " ".join(["-1 x{}".format(i+1) for i in range(nvariables)])+" ;\n")
-                
+
         def _print_lit_ineq(lits,sign, thr):
 
             lhs = " ".join( "{}1 x{}".format("+" if l >= 0 else "-",abs(l)) for l in lits)
@@ -874,7 +880,7 @@ class CNF(object):
             else:
                 raise RuntimeError("[Internal Error] Unknown type of constraints found: {}".format(type(cnst)))
             output.write(lhs + " " + op + " " + rhs + ";\n")
-                    
+
         # Normalize inequalities
         for cnst in self._constraints:
 
@@ -882,7 +888,7 @@ class CNF(object):
             if type(cnst) in [disj,xor]:
                 for cls in cnst.clauses():
                     _print_lit_ineq(cls,">=",1)
-                
+
             # Representation by equation
             elif type(cnst)==eq:
                 _print_lit_ineq(cnst,"=",cnst.value)
@@ -904,14 +910,14 @@ class CNF(object):
                 _print_lin_ineq(cnst)
             else:
                 raise RuntimeError("[Internal Error] Unknown type of constraints found: {}".format(type(cnst)))
-        
+
         return output.getvalue()
 
     def sage(self, export_header=True, extra_text=None, rational=False, opt=False):
         from io import StringIO
         output = StringIO()
 
-        output.write("p = MixedIntegerLinearProgram()\n") 
+        output.write("p = MixedIntegerLinearProgram()\n")
         if rational:
             output.write("x = p.new_variable(real=True, nonnegative=True)\n")
             output.write("x.set_max(1)\n")
@@ -940,7 +946,7 @@ class CNF(object):
             else:
                 raise RuntimeError("[Internal Error] Unknown type of constraints found: {}".format(type(cnst)))
             output.write(lhs + " " + op + " " + rhs + ")\n")
-                    
+
         # Normalize inequalities
         for cnst in self._constraints:
 
@@ -948,7 +954,7 @@ class CNF(object):
             if type(cnst) in [disj,xor]:
                 for cls in cnst.clauses():
                     _print_lit_ineq(cls,">=",1)
-                
+
             # Representation by equation
             elif type(cnst)==eq:
                 _print_lit_ineq(cnst,"==",cnst.value)
@@ -975,7 +981,7 @@ class CNF(object):
         output.write("p.solve()\n")
 #        output.write("p.get_values(x)\n")
         return output.getvalue()
-                
+
     def latex(self, export_header=True, extra_text=None, full_document=False):
         """Output a LaTeX version of the CNF formula
 
@@ -993,13 +999,13 @@ class CNF(object):
         ----------
         export_header : bool, optional
             determines whether the formula header should be inserted as
-            a LaTeX comment in the output. By default is True. 
+            a LaTeX comment in the output. By default is True.
 
         extra_text : str, optional
             Additional text attached to the abstract.
 
         full_document : bool, optional
-            rather than just output the formula, output a document 
+            rather than just output the formula, output a document
             that contains it. False by default.
 
         Returns
@@ -1036,10 +1042,10 @@ class CNF(object):
 \usepackage{amsmath}
 \usepackage{listings}
 """
-        
+
         from io import StringIO
         output = StringIO()
-        
+
         # formula header as a LaTeX comment
         if export_header:
             for s in self.header.split("\n")[:-1]:
@@ -1062,7 +1068,7 @@ class CNF(object):
 
         if extra_text is not None and full_document:
             output.write(extra_text)
-                
+
         def map_literals(l):
             """Map literals to LaTeX string"""
             assert l!=0
@@ -1095,7 +1101,7 @@ class CNF(object):
                          format(len(self._name2index),clauses_number))
 
         output.write("\\begin{align}")
-        
+
         if clauses_number==0:
             output.write("\n   \\top")
         else:
@@ -1112,7 +1118,7 @@ class CNF(object):
         # document closing
         if full_document:
             output.write("\n\\end{document}")
-  
+
         return output.getvalue()
 
     #
@@ -1120,9 +1126,9 @@ class CNF(object):
     #
     def add_parity(self,variables, constant):
         """Output the CNF encoding of a parity constraint
-        
+
         E.g. X1 + X2 + X3 = 1 (mod 2) is encoded as
-        
+
         ( X1 v  X2 v  X3)
         (~X1 v ~X2 v  X3)
         (~X1 v  X2 v ~X3)
@@ -1159,29 +1165,29 @@ class CNF(object):
         self._constraints.append(parity)
         if self._length is not None:
             self._length += parity.n_clauses()
-        
+
 
     def add_strictly_less_than(self,variables, threshold):
         """Clauses encoding a \"strictly less than\" constraint
-     
+
         E.g. X1 + X2 + X3 + X4 < 3
-     
+
         (~X1 v ~X2 v ~X3)
         (~X1 v ~X2 v ~X4)
         (~X1 v ~X3 v ~X4)
         (~X2 v ~X3 v ~X4)
-     
+
         Parameters
         ----------
         variables : list of variables
            variables in the constraint
         threshold: int
            upper bound of the constraint
-     
+
         Returns
         -------
             a list of clauses
-     
+
         Examples
         --------
         >>> F=CNF()
@@ -1210,25 +1216,25 @@ class CNF(object):
 
     def add_less_or_equal(self,variables, threshold):
         """Clauses encoding a \"less than or equal to\" constraint
-     
+
         E.g. X1 + X2 + X3 + X4 <= 2
-     
+
         (~X1 v ~X2 v ~X3)
         (~X1 v ~X2 v ~X4)
         (~X1 v ~X3 v ~X4)
         (~X2 v ~X3 v ~X4)
-     
+
         Parameters
         ----------
         variables : list of variables
            variables in the constraint
         threshold: int
            upper bound of the constraint
-     
+
         Returns
         -------
             a list of clauses
-     
+
         Examples
         --------
         >>> S=CNF()
@@ -1259,29 +1265,29 @@ class CNF(object):
         self._constraints.append(ineq)
         if self._length is not None:
             self._length += ineq.n_clauses()
-    
+
 
     def add_strictly_greater_than(self, variables, threshold):
         """Clauses encoding a \"strictly greater than\" constraint
-     
+
         E.g. X1 + X2 + X3 + X4 > 2
-     
+
         (X1 v X2 v X3)
         (X1 v X2 v X4)
         (X1 v X3 v X4)
         (X2 v X3 v X4)
-     
+
         Parameters
         ----------
         variables : list of variables
            variables in the constraint
         threshold: int
            lower bound of the constraint
-     
+
         Returns
         -------
             a list of clauses
-     
+
         Examples
         --------
         >>> F=CNF()
@@ -1306,29 +1312,29 @@ class CNF(object):
         self._constraints.append(ineq)
         if self._length is not None:
             self._length += ineq.n_clauses()
-     
+
 
     def add_greater_or_equal(self, variables, threshold):
         """Clauses encoding a \"greater than or equal to\" constraint
-     
+
         E.g. X1 + X2 + X3 + X4 > 1
-     
+
         (X1 v X2 v X3)
         (X1 v X2 v X4)
         (X1 v X3 v X4)
         (X2 v X3 v X4)
-     
+
         Parameters
         ----------
         variables : list of variables
            variables in the constraint
         threshold: int
            lower bound of the constraint
-     
+
         Returns
         -------
             a list of clauses
-     
+
         Examples
         --------
         >>> S=CNF()
@@ -1359,9 +1365,9 @@ class CNF(object):
 
     def add_equal_to(self, variables, value):
         """Clauses encoding a \"equal to\" constraint
-     
+
         E.g. X1 + X2 + X3 + X4 = 1
-     
+
         (X1 v X2 v X3 v X4)
         (~X1 v ~X2)
         (~X1 v ~X3)
@@ -1369,7 +1375,7 @@ class CNF(object):
         (~X2 v ~X3)
         (~X2 v ~X4)
         (~X3 v ~X4)
-     
+
         Parameters
         ----------
         variables : list of variables
@@ -1385,7 +1391,7 @@ class CNF(object):
 
     def add_loose_majority(self, variables):
         """Clauses encoding a \"at least half\" constraint
-     
+
         Parameters
         ----------
         variables : list of variables
@@ -1396,7 +1402,7 @@ class CNF(object):
 
     def add_loose_minority(self, variables):
         """Clauses encoding a \"at most half\" constraint
-     
+
         Parameters
         ----------
         variables : list of variables
@@ -1404,11 +1410,11 @@ class CNF(object):
         """
         threshold = len(variables)//2
         return self.add_less_or_equal(variables, threshold)
-    
+
 
     def add_exactly_half_ceil(self, variables):
         """Clauses encoding a \"exactly half\" constraint (rounded up)
-     
+
         Parameters
         ----------
         variables : list of variables
@@ -1416,10 +1422,10 @@ class CNF(object):
         """
         threshold = (len(variables)+1)/2
         return self.add_equal_to(variables,threshold)
-     
+
     def add_exactly_half_floor(self, variables):
         """Clauses encoding a \"exactly half\" constraint (rounded down)
-     
+
         Parameters
         ----------
         variables : list of variables
@@ -1431,7 +1437,7 @@ class CNF(object):
 
     def add_linear(self, *args):
         """Add clauses encoding an integer linear constraint
-     
+
         Integer linear constraints can be added as constraints
         to the formula, as a shortcut for an equivalent set of
         clauses. Consider for example
@@ -1439,9 +1445,9 @@ class CNF(object):
         .. math::
 
             x_1 + 2 x_2 + 4 x_3 \geq 3
-        
+
         that can be encoded as clauses
-     
+
         .. math::
 
             (\neg x_1  \lor x_2 \lor x_3) \wedge (x_1  \lor \neg x_2 \lor x_3) \wedge (x_1  \lor x_2 \lor x_3)
@@ -1480,7 +1486,7 @@ class CNF(object):
         >>> F.add_linear(1,"x_1",2,"x_2",4,"x_3",">", 0)
         >>> len(F)
         1
-        
+
         Parameters
         ----------
         *args : sequence of int and strings
@@ -1496,7 +1502,7 @@ class CNF(object):
 
         variables = self._check_and_compress_literals(variables)
         cnst=None
-        
+
         if op == '==':
 
             cnst = weighted_eq(*list(zip(weights,variables)),value=value)
@@ -1519,12 +1525,12 @@ class CNF(object):
 
         else:
             raise ValueError("Comparison operator must be among ==, >=, <=, >, <.")
-        
+
         self._constraints.append(cnst)
         # Too expensive to count the number of generated clause. Invalidate the estimate.
         self._length = None
 
-    
+
 class unary_mapping(object):
     """Unary CNF representation of a mapping between two sets."""
 
@@ -1567,7 +1573,7 @@ class unary_mapping(object):
             which range elements are compatible with a specific
             domain element.
 
-        var_name: function, optional 
+        var_name: function, optional
             given :math:`i` and :math`j` the function must produce the
             name of variable :math`v(i,j)`
 
@@ -1599,7 +1605,7 @@ class unary_mapping(object):
 
         self.NonDecreasing = kwargs.pop('nondecreasing', False)
 
-        # variable name scheme 
+        # variable name scheme
         self.var_name = kwargs.pop('var_name', self.var_name)
 
         # use a bipartite graph scheme for the mapping?
@@ -1746,7 +1752,7 @@ class binary_mapping(object):
         :math:`v(i,0)...v(i,k-1)` where :math:`i \in D` and
         :math:`v(i,0)...v(i,k-1)` is a binary of :math:`k` bits, so
         that the first :math:`|R|` string in :math:`{0,1}^k` (in
-        lexicographic order) encode the elements of :math:`R`. 
+        lexicographic order) encode the elements of :math:`R`.
 
         Parameters
         ----------
@@ -1774,7 +1780,7 @@ class binary_mapping(object):
         # optional parameters of the mapping
         self.Injective     = kwargs.pop('injective', False)
         self.NonDecreasing = kwargs.pop('nondecreasing', False)
-        # variable name scheme 
+        # variable name scheme
         self.var_name = kwargs.pop('var_name', self.var_name)
 
         if kwargs:
@@ -1798,7 +1804,7 @@ class binary_mapping(object):
     def forbid_bitstring(self, i, bs):
         """Generates a clause that exclude 'i -> bs' mapping """
         return [ ( bs[b]==0, self.var_name(i,self.Bits-1-b))
-                 for b in range(self.Bits) ] 
+                 for b in range(self.Bits) ]
 
     def forbid_image(self, i, j):
         """Generates a clause that exclude 'i -> j' mapping """
@@ -1809,7 +1815,7 @@ class binary_mapping(object):
         # Avoid strings that do not correspond to elements from the range
         for i,bs in product(self.Domain,
                             islice(product([0,1],repeat=self.Bits),len(self.Range),None)):
-             self.forbid_bitstring(i,bs) 
+             self.forbid_bitstring(i,bs)
 
         # Injectivity
         if self.Injective:
@@ -1817,7 +1823,7 @@ class binary_mapping(object):
                 for i1,i2 in combinations(self.Domain,2):
                     yield self.forbid_image(i1,j) + self.forbid_image(i2,j)
 
-        # Enforce Non Decreasing Mapping 
+        # Enforce Non Decreasing Mapping
         if self.NonDecreasing:
             pairs_of_maps = product(combinations(self.Domain,2),
                                     combinations(self.Range,2))
@@ -1843,7 +1849,7 @@ class disj(tuple):
 
             x_1 \vee \\neg x_3 \vee x_7
 
-        is 
+        is
 
         ::
 
@@ -1864,7 +1870,7 @@ class disj(tuple):
     def __str__(self):
         literals = [ "{}{}".format("" if l>0 else "¬",abs(l)) for l in self ]
         return " ∨ ".join(literals)
-    
+
 
     def n_clauses(self):
         """Number of clauses to represent the constraints"""
@@ -1873,28 +1879,28 @@ class disj(tuple):
     def clauses(self):
         """Clauses to represent the constraint"""
         yield self
-                    
+
 class xor(tuple):
 
     def __new__(cls,*args,**kw):
         """Parity constraint
-            
+
         Internal representation of a parity constraint over a set of
         literals. In particular the constraint claims that the boolean
         values of the sequence of literals (contained in the field
         `literals`) must sum to a number which is equal to the field
         `value`, module 2.
 
-        For example the encoding of 
+        For example the encoding of
 
         .. math::
 
             x_1 \\oplus \\neg x_3 \\oplus x_7 = 1 \\pmod{2}
 
-        is 
+        is
 
         ::
-        
+
             xor(1,-3,7, value = 1)
 
         Parameters
@@ -1923,7 +1929,7 @@ class xor(tuple):
     def __str__(self):
         literals = [ "{}{}".format("" if l>0 else "¬",abs(l)) for l in self ]
         return "{} {} {} (mod 2)".format(" ⊕ ".join(literals),"==",self.value)
-    
+
     def n_clauses(self):
         """Number of clauses to represent a XOR"""
 
@@ -1936,7 +1942,7 @@ class xor(tuple):
 
     def clauses(self):
         """Clauses to represent the constraint"""
-        
+
         value = (self.value + len([lit for lit in self if lit < 0])) % 2
         domains = tuple([(abs(lit),-abs(lit)) for lit in self])
         for c in product(*domains):
@@ -1945,9 +1951,9 @@ class xor(tuple):
             if parity != value:
                 yield disj(*c)
 
-        
-    
-    
+
+
+
 class less(tuple):
 
     def __new__(cls,*args,**kw):
@@ -1958,13 +1964,13 @@ class less(tuple):
         sequence of literals (contained in the field `literals`) must sum
         to a number which is strictly less than the field `threshold`.
 
-        For example the encoding of 
+        For example the encoding of
 
         .. math::
 
              x_2 + \\neg x_3 + x_7 < 2
 
-        is 
+        is
 
         ::
 
@@ -2000,7 +2006,7 @@ class less(tuple):
     def __str__(self):
         literals = [ "{}{}".format("" if l>0 else "¬",abs(l)) for l in self ]
         return "({}) {} {}".format(" + ".join(literals),"<",self.threshold)
-    
+
     def n_clauses(self):
         """Number of clauses to represent the constraints"""
         if self.threshold > len(self):
@@ -2010,7 +2016,7 @@ class less(tuple):
 
         def binom(n,k):
             return factorial(n) // factorial(k) // factorial(n - k)
-                
+
         return binom(len(self),self.threshold)
 
     def clauses(self):
@@ -2035,13 +2041,13 @@ class leq(tuple):
         `literals`) must sum to a number which less than or equal to the
         field `threshold`.
 
-        For example the encoding of 
+        For example the encoding of
 
         .. math::
 
              x_2 + \\neg x_3 + \\neq x_4 + x_7 \leq 2
 
-        is 
+        is
 
         ::
 
@@ -2077,8 +2083,8 @@ class leq(tuple):
     def __str__(self):
         literals = [ "{}{}".format("" if l>0 else "¬",abs(l)) for l in self ]
         return "{} {} {}".format(" + ".join(literals),"<=",self.threshold)
-    
-        
+
+
     def n_clauses(self):
         """Number of clauses to represent the constraints"""
         return less(*self,threshold=self.threshold+1).n_clauses()
@@ -2089,7 +2095,7 @@ class leq(tuple):
 
 
 class greater(tuple):
-    
+
     def __new__(cls,*args,**kw):
         """Greater-than constraint
 
@@ -2098,13 +2104,13 @@ class greater(tuple):
         sequence of literals (contained in the field `literals`) must sum
         to a number which greater than the field `threshold`.
 
-        For example the encoding of 
+        For example the encoding of
 
         .. math::
 
              x_2 + \\neg x_3 + \\neq x_4 + x_7 > 2
 
-        is 
+        is
 
         ::
 
@@ -2140,7 +2146,7 @@ class greater(tuple):
     def __str__(self):
         literals = [ "{}{}".format("" if l>0 else "¬",abs(l)) for l in self ]
         return "{} {} {}".format(" + ".join(literals),">",self.threshold)
-        
+
     def n_clauses(self):
         """Number of clauses to represent the constraints"""
         if self.threshold >= len(self):
@@ -2176,13 +2182,13 @@ class geq(tuple):
         `literals`) must sum to a number which greater than or equal to the
         field `threshold`.
 
-        For example the encoding of 
+        For example the encoding of
 
         .. math::
 
              x_2 + \\neg x_3 + \\neq x_4 + x_7 \geq 2
 
-        is 
+        is
 
         ::
 
@@ -2218,7 +2224,7 @@ class geq(tuple):
     def __str__(self):
         literals = [ "{}{}".format("" if l>0 else "¬",abs(l)) for l in self ]
         return "{} {} {}".format(" + ".join(literals),">=",self.threshold)
-    
+
     def n_clauses(self):
         """Number of clauses to represent the constraints"""
         return greater(*self,threshold=self.threshold-1).n_clauses()
@@ -2236,13 +2242,13 @@ class eq(tuple):
         sequence of literals (contained in the field `literals`) must sum
         to a number which equal to the field `value`.
 
-        For example the encoding of 
+        For example the encoding of
 
         .. math::
 
              x_2 + \\neg x_3 + \\neq x_4 + x_7 = 2
 
-        is 
+        is
 
         ::
 
@@ -2278,7 +2284,7 @@ class eq(tuple):
     def __str__(self):
         literals = [ "{}{}".format("" if l>0 else "¬",abs(l)) for l in self ]
         return "{} {} {}".format(" + ".join(literals),"==",self.value)
-    
+
     def n_clauses(self):
         """Number of clauses to represent the constraints"""
         return leq(*self,threshold=self.value).n_clauses() \
@@ -2310,7 +2316,7 @@ class weighted_eq(tuple):
         (contained in the field `literals`) must sum to a number which
         equal to the field :py:attr:`value`.
 
-        For example the encoding of 
+        For example the encoding of
 
         .. math::
 
@@ -2350,21 +2356,21 @@ class weighted_eq(tuple):
     def __str__(self):
         terms = [ "{}*{}".format(w,v) for w,v in self ]
         return "{} {} {}".format(" + ".join(terms),"==",self.value)
-    
+
     def n_clauses(self):
         """Number of clauses to represent the constraints"""
         return sum(1 for _ in self.clauses())
-        
+
     def clauses(self):
         """Clauses to represent the constraint"""
 
-        
+
         domains = tuple([((w,v),(0,-v)) for w,v in self])
 
         for summands in product(*domains):
             if sum(w for w,_ in summands) != self.value:
                 yield disj(*(-v for _,v in summands))
-        
+
 class weighted_geq(tuple):
     def __new__(cls,*args,**kw):
         """Linear inequality constraint (greater than or equal to)
@@ -2382,7 +2388,7 @@ class weighted_geq(tuple):
         (contained in the field `literals`) must sum to a number which
         greater than or equal to the field :py:attr:`threshold`.
 
-        For example the encoding of 
+        For example the encoding of
 
         .. math::
 
@@ -2426,14 +2432,14 @@ class weighted_geq(tuple):
     def n_clauses(self):
         """Number of clauses to represent the constraints"""
         return sum(1 for _ in self.clauses())
-        
+
     def clauses(self):
         """Clauses to represent the constraint"""
 
-        
+
         domains = tuple([((w,v),(0,-v)) for w,v in self])
 
         for summands in product(*domains):
             if sum(w for w,_ in summands) < self.threshold:
                 yield disj(*(-v for _,v in summands))
-        
+
