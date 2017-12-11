@@ -365,7 +365,8 @@ class CNF(object):
                 raise ValueError("The clause contains unknown variable: {}".format(error))
             else:
                 for _, var in literals:
-                    self.add_variable(var)
+                    if var not in self._name2index:
+                        self.add_variable(var)
                 return tuple((1 if p else -1) * self._name2index[n] for p, n in literals)
 
     def _check_and_compress_literals_unsafe(self, literals):

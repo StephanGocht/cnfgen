@@ -62,8 +62,8 @@ def BinPacking(numBins, binSize, items):
     # Each bin has no more than size items
     for aBin in range(numBins):
         F.add_linear(
-            *(toArgs([(items[i], (i, aBin)) for i in range(len(items))])
-                + ["<=", binSize])
+            *toArgs([(items[i], (i, aBin)) for i in range(len(items))]
+                ,"<=", binSize)
         )
 
     return F
