@@ -74,9 +74,9 @@ def setup_command_line_args(parser):
                         default='dimacs',
                         help="""
                         Output format of the formulas. 'latex' is
-                        convenient to insert formulas into papers, 
-                        'dimacs' and 'opb' are formats used by CNF 
-                        and pseudoboolean sat solvers, respectively. 
+                        convenient to insert formulas into papers,
+                        'dimacs' and 'opb' are formats used by CNF
+                        and pseudoboolean sat solvers, respectively.
                         (default: dimacs)
                         """)
 
@@ -131,7 +131,7 @@ def command_line_utility(argv=sys.argv):
     This function provide the main interface to CNFgen. It sets up the
     command line, parses the command line arguments, builds the
     appropriate formula and outputs its representation.
-    
+
     It **must not** raise exceptions, but fail with error messages for
     the user.
 
@@ -142,14 +142,14 @@ def command_line_utility(argv=sys.argv):
     """
 
 
-    # Formula generators cmdline setup 
-    from . import families
-    from . import transformations
-    from .cmdline import is_cnfgen_subcommand
-    from .cmdline import is_cnf_transformation_subcommand
-    from .cmdline import find_methods_in_package
+    # Formula generators cmdline setup
+    from cnfformula import families
+    from cnfformula import transformations
+    from cnfformula.cmdline import is_cnfgen_subcommand
+    from cnfformula.cmdline import is_cnf_transformation_subcommand
+    from cnfformula.cmdline import find_methods_in_package
 
-    
+
     # Cmdline parser for formula transformations
     t_parser = argparse.ArgumentParser(usage=os.path.basename(argv[0]) + " ..."
                                        +" [-T <transformation> <params> -T <transformation> <params> ...]",
@@ -157,7 +157,7 @@ def command_line_utility(argv=sys.argv):
                                        For more information type 'cnfgen ... -T <transformation> [--help | -h]'
 
                                        """)
-    
+
     t_subparsers = t_parser.add_subparsers(title="Available formula transformation",
                                            metavar="<transformation>")
     for sc in find_methods_in_package(transformations,
@@ -166,7 +166,7 @@ def command_line_utility(argv=sys.argv):
         p=t_subparsers.add_parser(sc.name,help=sc.description)
         sc.setup_command_line(p)
         p.set_defaults(transformation=sc)
-    
+
     # Main cmdline setup
     parser=argparse.ArgumentParser(prog=os.path.basename(argv[0]),
                                    formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -177,12 +177,12 @@ Furthermore it is possible to postprocess the formula by applying
 a sequence of transformations.
 
 """+t_parser.format_help())
-    
+
 
     setup_command_line_args(parser)
-    
-        
-    
+
+
+
     subparsers=parser.add_subparsers(title="Available formula types",metavar='<formula type>')
     for sc in find_methods_in_package(families,
                                       is_cnfgen_subcommand,
@@ -191,8 +191,8 @@ a sequence of transformations.
         sc.setup_command_line(p)
         p.set_defaults(generator=sc)
 
-   
-        
+
+
     # Split the command line into formula generation and transformation
     # applications
     def splitlist(L,key):
@@ -208,7 +208,7 @@ a sequence of transformations.
     cmd_chunks = list(splitlist(argv,"-T"))
     generator_cmd = cmd_chunks[0][1:]
     transformation_cmds = cmd_chunks[1:]
-    
+
     # Parse the various component of the command line
     args=parser.parse_args(generator_cmd)
     t_args=[]
@@ -230,7 +230,7 @@ a sequence of transformations.
     # Apply the sequence of transformations
     for argdict in t_args:
         cnf = argdict.transformation.transform_cnf(cnf,argdict)
-        
+
     # Output
     if args.output_format == 'latex':
         cmdline_descr=["\\noindent\\textbf{Command line:}",
@@ -254,7 +254,7 @@ a sequence of transformations.
         output = cnf.latex(export_header=args.verbose,
                            extra_text="\n".join(cmdline_descr+["\n"]),
                            full_document=True)
-        
+
     elif args.output_format == 'dimacs':
         output = cnf.dimacs(export_header=args.verbose,
                             extra_text="COMMAND LINE: cnfgen " + " ".join(argv[1:]) + "\n")
@@ -274,7 +274,7 @@ a sequence of transformations.
     elif args.output_format == 'opb-opt':
         output = cnf.opb(export_header=args.verbose,opt=True,
                          extra_text="COMMAND LINE: cnfgen " + " ".join(argv[1:]) + "\n")
-        
+
     elif args.output_format == 'sage-opt':
         output = cnf.sage(export_header=args.verbose,rational=False,opt=True,
                          extra_text="COMMAND LINE: cnfgen " + " ".join(argv[1:]) + "\n")
@@ -282,7 +282,7 @@ a sequence of transformations.
     elif args.output_format == 'wcnf':
         output = cnf.wcnf(export_header=args.verbose,
                          extra_text="COMMAND LINE: cnfgen " + " ".join(argv[1:]) + "\n")
-        
+
     else:
         output = cnf.dimacs(export_header=args.verbose,
                             extra_text="COMMAND LINE: cnfgen " + " ".join(argv[1:]) + "\n")

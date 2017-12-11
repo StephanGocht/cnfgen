@@ -24,7 +24,7 @@ from collections import Counter
 from collections import namedtuple
 
 import re
-from math import ceil,log,factorial
+from math import ceil,floor,log,factorial
 
 from . import prjdata as pd
 from .graphs import bipartite_sets,neighbors
@@ -1420,7 +1420,7 @@ class CNF(object):
         variables : list of variables
            variables in the constraint
         """
-        threshold = (len(variables)+1)/2
+        threshold = ceil(len(variables)/2)
         return self.add_equal_to(variables,threshold)
 
     def add_exactly_half_floor(self, variables):
@@ -1431,7 +1431,7 @@ class CNF(object):
         variables : list of variables
            variables in the constraint
         """
-        threshold = len(variables)/2
+        threshold = floor(len(variables)/2)
         return self.add_equal_to(variables,threshold)
 
 
