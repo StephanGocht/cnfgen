@@ -63,7 +63,7 @@ def PigeonholePrinciple(pigeons,holes,functional=False,onto=False):
 
     def var_name(p,h):
         return 'p_{{{0},{1}}}'.format(p,h)
-    
+
     if functional:
         if onto:
             formula_name="Matching"
@@ -74,11 +74,11 @@ def PigeonholePrinciple(pigeons,holes,functional=False,onto=False):
             formula_name="Onto pigeonhole principle"
         else:
             formula_name="Pigeonhole principle"
-            
+
     php=CNF()
     php.header="{0} formula for {1} pigeons and {2} holes\n".format(formula_name,pigeons,holes)\
         + php.header
-    
+
     mapping=unary_mapping(
         range(1,pigeons+1),
         range(1,holes+1),
@@ -99,8 +99,8 @@ def GraphPigeonholePrinciple(graph,functional=False,onto=False):
     """Graph Pigeonhole Principle CNF formula
 
     The graph pigeonhole principle CNF formula, defined on a bipartite
-    graph G=(L,R,E), claims that there is a subset E' of the edges such that 
-    every vertex on the left size L has at least one incident edge in E' and 
+    graph G=(L,R,E), claims that there is a subset E' of the edges such that
+    every vertex on the left size L has at least one incident edge in E' and
     every edge on the right side R has at most one incident edge in E'.
 
     This is possible only if the graph has a matching of size |L|.
@@ -142,7 +142,7 @@ def GraphPigeonholePrinciple(graph,functional=False,onto=False):
 
     gphp=CNF()
     gphp.header="{0} formula for graph {1}\n".format(formula_name,graph.name)
-    
+
     Left, Right = bipartite_sets(graph)
 
     mapping = unary_mapping(Left,Right,
@@ -151,7 +151,7 @@ def GraphPigeonholePrinciple(graph,functional=False,onto=False):
                             injective = True,
                             functional = functional,
                             surjective = onto)
-    
+
     gphp.mode_unchecked()
     mapping.load_variables_to_formula(gphp)
     mapping.load_clauses_to_formula(gphp)
@@ -169,16 +169,16 @@ def BinaryPigeonholePrinciple(pigeons,holes):
 
     Parameters
     ----------
-    pigeon : int 
+    pigeon : int
        number of pigeons
-    holes : int 
+    holes : int
        number of holes
     """
 
     bphp=CNF()
     bphp.header="Binary Pigeonhole Principle for {0} pigeons and {1} holes\n".format(pigeons,holes)\
                  + bphp.header
-    
+
     mapping=binary_mapping(range(1,pigeons+1),
                            range(1,holes+1), injective = True)
     bphp.mode_unchecked()
@@ -191,7 +191,7 @@ def BinaryPigeonholePrinciple(pigeons,holes):
 @cnfformula.cmdline.register_cnfgen_subcommand
 class PHPCmdHelper(object):
     """Command line helper for the Pigeonhole principle CNF"""
-    
+
     name='php'
     description='pigeonhole principle'
 
@@ -250,7 +250,7 @@ class GPHPCmdHelper:
         Arguments:
         - `args`: command line options
         """
-        G = BipartiteGraphHelper.obtain_graph(args) 
+        G = BipartiteGraphHelper.obtain_graph(args)
         return GraphPigeonholePrinciple(G,
                                         functional=args.functional,
                                         onto=args.onto)
@@ -260,7 +260,7 @@ class GPHPCmdHelper:
 @cnfformula.cmdline.register_cnfgen_subcommand
 class BPHPCmdHelper(object):
     """Command line helper for the Pigeonhole principle CNF"""
-    
+
     name='bphp'
     description='binary pigeonhole principle'
 
@@ -283,3 +283,70 @@ class BPHPCmdHelper(object):
         """
         return BinaryPigeonholePrinciple(args.pigeons,
                                          args.holes)
+
+@cnfformula.families.register_cnf_generator
+def HiddenPigeonholePrinciple(pigeons,items,holes):
+    """Hidden Pigeonhole Principle CNF formula
+
+    Each pigeon has multiple items that should be fit into a hole, however each
+    hole can only contain items of at most one pigeon.
+
+    It is called hidden pigeon hole principle as it is only adding more
+    constraints to the origianal pigeon hole principle, which makes it difficult
+    to detect "the right" at-most-one constraints.
+
+    Arguments:
+    - `pigeons`: number of pigeons
+    - `items`: number of items per pigeon
+    - `holes`:   number of holes
+    """
+
+    def var(p,i,h):
+        return 'p_{{{0},{1},{2}}}'.format(p,h,i)
+
+    php=CNF()
+    php.header="hidden pigeon hole principle formula for {0} pigeons, each having {2} items ,and {1} holes\n".format(pigeons,holes, items)\
+        + php.header
+
+    for p in range(pigeons):
+        for i in range(items):
+            php.add_clause([(True, var(p,i,h)) for h in range(holes)])
+
+    for h in range(holes):
+        for p1 in range(pigeons):
+            for p2 in range(p1):
+                for i1 in range(items):
+                    for i2 in range(items):
+                        php.add_clause([(False, var(p1,i1,h)), (False, var(p2,i2,h))])
+
+    return php
+
+
+@cnfformula.cmdline.register_cnfgen_subcommand
+class HPHPCmdHelper(object):
+    """Command line helper for the Pigeonhole principle CNF"""
+
+    name='hphp'
+    description='hidden pigeonhole principle'
+
+    @staticmethod
+    def setup_command_line(parser):
+        """Setup the command line options for hiden pigeonhole principle formula
+
+        Arguments:
+        - `parser`: parser to load with options.
+        """
+        parser.add_argument('pigeons',metavar='<pigeons>',type=int,help="Number of pigeons")
+        parser.add_argument('items',metavar='<items>',type=int,help="Number of items per pigeon")
+        parser.add_argument('holes',metavar='<holes>',type=int,help="Number of holes")
+
+
+    @staticmethod
+    def build_cnf(args):
+        """Build a PHP formula according to the arguments
+
+        Arguments:
+        - `args`: command line options
+        """
+        return HiddenPigeonholePrinciple(args.pigeons,
+                                args.items, args.holes)
