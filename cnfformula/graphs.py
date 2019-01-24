@@ -1040,7 +1040,8 @@ def bipartite_random_regular(l,r,d,seed=None):
         G.add_node(v,bipartite=1)
 
     A=L*d
-    B=R*(l*d / r)
+    assert(l*d % r == 0)
+    B=R*(l*d // r)
     assert len(B)==l*d
 
     for i in range(l*d):
