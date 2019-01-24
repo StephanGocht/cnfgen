@@ -282,7 +282,7 @@ class DirectedAcyclicGraphHelper(GraphHelper):
         gr=parser.add_argument_group("I/O options")
 
         gr.add_argument('--savegraph'+suffix,'-sg'+suffix,
-                            type=argparse.FileType('wb',0),
+                            type=argparse.FileType('w', encoding='UTF-8'),
                             metavar="<graph_file>",
                             default=None,
                             help="""Save the DAG to <graph_file>.
@@ -416,7 +416,7 @@ class SimpleGraphHelper(GraphHelper):
 
         gr=parser.add_argument_group("I/O options for graph "+suffix)
         gr.add_argument('--savegraph'+suffix,'-sg'+suffix,
-                            type=argparse.FileType('wb',0),
+                            type=argparse.FileType('w', encoding='UTF-8'),
                             metavar="<graph_file>",
                             default=None,
                             help="""Save the graph to <graph_file>.
@@ -667,7 +667,7 @@ class BipartiteGraphHelper(GraphHelper):
                                      containing the graph structure.
                                      """)
         gr.add_argument('--savegraph'+suffix,'-sg'+suffix,
-                        type=argparse.FileType('wb',0),
+                        type=argparse.FileType('w', encoding='UTF-8'),
                         metavar="<graph_file>",
                         default=None,
                         help="""Save the graph to <graph_file>. Setting '<graph_file>' to '-'sends

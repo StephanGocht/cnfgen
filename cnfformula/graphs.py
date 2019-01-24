@@ -150,7 +150,6 @@ def _process_graph_io_arguments(iofile,
 
     # Check the file
     if not isinstance(iofile,io.TextIOBase) and \
-       not isinstance(iofile,file) and \
        not isinstance(iofile,io.StringIO):
         raise ValueError("The IO stream \"{}\" does not correspond to a file".format(iofile))
 
