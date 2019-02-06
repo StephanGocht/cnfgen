@@ -16,6 +16,12 @@ from math import ceil,floor
 
 from inspect import getdoc
 
+headerInfo = """
+Requires fork by Stephan Gocht:
+https://github.com/StephanGocht/cnfgen
+
+"""
+
 @cnfformula.families.register_cnf_generator
 def boundMatrix(*args, **kwargs):
     f = BoundMatrix(*args, **kwargs)
@@ -66,6 +72,7 @@ class BoundMatrix:
 
     def getFormula(self):
         self.f = CNF()
+        self.f._header += headerInfo
         self.addAllVariables()
 
         result = fe.And()
@@ -150,37 +157,60 @@ class BoundMatrixWithSplitConstraint(BoundMatrix):
 
         return result
 
+@cnfformula.families.register_cnf_generator
+def boundMatrixDoubleNotOne(*args, **kwargs):
+    f = BoundMatrixDoubleNotOne(*args, **kwargs)
+    return f.getFormula()
+
+class BoundMatrixDoubleNotOne(BoundMatrix):
+    """
+    For row constraints doubles all coefficients that are not equal to one.
+    """
+    def addRowConstraint(self, i):
+        f = lambda x: x if x == 1 else 2 * x
+        return fe.GEQ([(f(self.a[i][j]), self.x(i,j)) for j in range(self.numCols)], self.r[i])
+
 @cnfformula.cmdline.register_cnfgen_subcommand
-class SCCmdHelper(object):
+class BoundMatrixHelper(object):
     name='bound_matrix_strong_diagonal'
     description='LEQ column constraints and GEQ row constraints'
 
     @staticmethod
     def setup_command_line(parser):
         parser.description = r"""Create constraints: \sum_{j \in [n]} a_{i,j} x_{i,j}
-        \geq r_i and \sum_{i \in [m]} a_{i,j} x_{i,j} \leq c_j. a_{i,j} = r_i if i = j
+        \geq r and \sum_{i \in [m]} a_{i,j} x_{i,j} \leq c for a_{i,j} = r_i if i = j
         otherwise 1."""
 
-        parser.add_argument('--numRows','-m',type=int,
+        parser.add_argument('--numRows','-m',type=int, required=True,
                             help="number of rows")
-        parser.add_argument('--numCols','-n',type=int,
+        parser.add_argument('--numCols','-n',type=int, required=True,
                             help="number of columns")
-        parser.add_argument('--rowBound','-r',type=int,
+        parser.add_argument('--rowBound','-r',type=int, required=True,
                             help="bound for every row constraint (greater or equal)")
-        parser.add_argument('--colBound','-c',type=int,
+        parser.add_argument('--colBound','-c',type=int, required=True,
                             help="bound for every column constraint (less or equal)")
+        parser.add_argument('--diagonal','-d',type=int, required=False,
+                            help="Change the value for diagonal entries.")
+
 
         parser.add_argument('--addOne','-a',default=False,action='store_true',
                     help="add one to the rhs of a random row constraint")
         parser.add_argument('--lastRowOne','-l',default=False,action='store_true',
                     help="set the rhs of the last row to one")
 
-        parser.add_argument('--splitRows','-s',default=False,action='store_true',
+        g = parser.add_mutually_exclusive_group()
+        g.add_argument('--splitRows','-s',default=False,action='store_true',
                     help="split the row constrains in two halfs with helper variable")
+
+        g.add_argument('--doubleDiagonal','-dd',default=False,action='store_true',
+                    help="Double the value in the diagonal for row constraints.")
 
     @staticmethod
     def build_cnf(args):
-        a = [[1 if i != j else args.rowBound for j in range(args.numCols)] for i in range(args.numRows)]
+        if args.diagonal is None:
+            args.diagonal = args.rowBound
+
+        a = [[1 if i != j else args.diagonal for j in range(args.numCols)] for i in range(args.numRows)]
         r = [args.rowBound] * args.numRows
         c = [args.colBound] * args.numCols
         if args.lastRowOne:
@@ -192,5 +222,7 @@ class SCCmdHelper(object):
 
         if args.splitRows:
             return boundMatrixWithSplitConstraint(a,r,c)
+        elif args.doubleDiagonal:
+            return boundMatrixDoubleNotOne(a,r,c)
         else:
             return boundMatrix(a,r,c)
