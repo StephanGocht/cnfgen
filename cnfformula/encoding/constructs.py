@@ -9,6 +9,7 @@ import itertools
 import sys
 
 from math import ceil
+import cnfformula.cnf as cnf
 
 # a literal is anything hashable
 
@@ -201,6 +202,49 @@ def lit2CNFgenLit(l):
         return (False, l.x)
     else:
         return (True, l)
+
+def intToLit(i):
+    var = "x_%i"%(abs(i))
+    if i < 0:
+        return Not(var)
+    else:
+        return var
+
+def fromCNFgen(cnst):
+    if type(cnst) == cnf.CNF:
+        result = And()
+        for constraint in cnst._constraints:
+            result.append(fromCNFgen(constraint))
+        return result
+    elif type(cnst) in [cnf.disj,cnf.xor]:
+        result = And()
+        for cls in cnst.clauses():
+            result.append(GEQ([(1,intToLit(i)) for i in cls], 1))
+        return result
+    elif type(cnst) in [cnf.weighted_eq,cnf.weighted_geq]:
+        terms = [(a,intToLit(x)) for a,x in cnst]
+        if type(cnst) == weighted_eq:
+            return And([GEQ(terms, cnst.value), LEQ(terms,cnst.value)])
+        else:
+            return GEQ(terms, cnst.value)
+    elif type(cnst) in [cnf.eq, cnf.geq, cnf.greater, cnf.leq, cnf.less]:
+        terms = [(1,intToLit(x)) for x in cnst]
+        if type(cnst)==cnf.eq:
+            return And([GEQ(terms, cnst.value), LEQ(terms, cnst.value)])
+
+        elif type(cnst)==cnf.geq:
+            return GEQ(terms, cnst.threshold)
+
+        elif type(cnst)==cnf.greater:
+            return GT(terms, cnst.threshold)
+
+        elif type(cnst)==cnf.leq:
+            return LEQ(terms, cnst.threshold)
+
+        elif type(cnst)==cnf.less:
+            return LT(terms, cnst.threshold)
+    else:
+        raise RuntimeError("[Internal Error] Unknown type of constraints found: {}".format(type(cnst)))
 
 def toCNFgen(cnf, f):
     v = ToCNFgenVisitor(cnf)
