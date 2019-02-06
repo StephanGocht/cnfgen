@@ -267,7 +267,7 @@ class DirectedAcyclicGraphHelper(GraphHelper):
         gr=gr.add_mutually_exclusive_group(required=required)
 
         gr.add_argument('--input'+suffix,'-i'+suffix,
-                        type=argparse.FileType('r',0),
+                        type=argparse.FileType('r'),
                         metavar="<input>",
                         default='-',
                         help="""Read the DAG from <input>. Setting '<input>' to '-' is another way
@@ -372,7 +372,7 @@ class SimpleGraphHelper(GraphHelper):
         gr=gr.add_mutually_exclusive_group(required=required)
 
         gr.add_argument('--input'+suffix,'-i'+suffix,
-                        type=argparse.FileType('r',0),
+                        type=argparse.FileType('r'),
                         metavar="<input>",
                         default='-',
                         help="""Read the graph from <input>.
@@ -626,7 +626,7 @@ class BipartiteGraphHelper(GraphHelper):
 
 
         gr.add_argument('--input'+suffix,'-i'+suffix,
-                        type=argparse.FileType('r',0),
+                        type=argparse.FileType('r'),
                         metavar="<input>",
                         default='-',
                         help="""Read the graph from file. Setting '<input>' to '-' is

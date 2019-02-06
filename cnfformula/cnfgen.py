@@ -63,7 +63,7 @@ def setup_command_line_args(parser):
     from cnfformula.prjdata import __version__
     parser.add_argument('-V', '--version', action='version', version="%(prog)s ("+__version__+")")
     parser.add_argument('--output','-o',
-                        type=argparse.FileType('wb',0),
+                        type=argparse.FileType('w'),
                         metavar="<output>",
                         default='-',
                         help="""Save the formula to <output>. Setting '<output>' to '-' sends the
