@@ -39,35 +39,40 @@ class BoundMatrix:
         \sum_{j \in [n]} a_{i,j} x_{i,j} \geq r_i
         \sum_{i \in [m]} a_{i,j} x_{i,j} \leq c_j
     """
-    def __init__(self, a, r, c):
+    def __init__(self, a, r, c, varOrder = None):
         self.a = a
         self.numRows = len(self.a)
         self.numCols = len(self.a[0])
         for i in range(self.numRows):
             if len(self.a[i]) != self.numCols:
-                raise TypeError("Requireing a matrix that allows accessing by a[i][j] that has equal dimension in every row.")
+                raise TypeError("Requiring a matrix that allows accessing by a[i][j] that has equal dimension in every row.")
             for j in range(self.numCols):
                 try:
                     if not isinstance(a[i][j], int):
-                        raise TypeError("Requireing integer matrix.")
+                        raise TypeError("Requiring integer matrix.")
                 except LookupError:
-                    raise TypeError("Requireing a matrix that allows accessing by a[i][j] that has equal dimension in every row.")
+                    raise TypeError("Requiring a matrix that allows accessing by a[i][j] that has equal dimension in every row.")
 
         self.r = r
         for i in range(self.numRows):
             try:
                 if not isinstance(r[i], int):
-                    raise TypeError("Requireing integer matrix.")
+                    raise TypeError("Requiring integer matrix.")
             except LookupError:
-                raise TypeError("Requireing a matrix that allows accessing by a[i][j] that has equal dimension in every row.")
+                raise TypeError("Requiring a matrix that allows accessing by a[i][j] that has equal dimension in every row.")
 
         self.c = c
         for j in range(self.numCols):
             try:
                 if not isinstance(c[j], int):
-                    raise TypeError("Requireing integer matrix.")
+                    raise TypeError("Requiring integer matrix.")
             except LookupError:
-                raise TypeError("Requireing a matrix that allows accessing by a[i][j] that has equal dimension in every row.")
+                raise TypeError("Requiring a matrix that allows accessing by a[i][j] that has equal dimension in every row.")
+
+        if varOrder is None:
+            varOrder = itertools.product(range(self.numRows), range(self.numCols))
+        self.varOrder = varOrder
+
 
 
     def getFormula(self):
@@ -95,9 +100,8 @@ class BoundMatrix:
         self.f.add_variable(var)
 
     def addAllVariables(self):
-        for i in range(self.numRows):
-            for j in range(self.numCols):
-                self.addVariable(self.x(i,j))
+        for i,j in self.varOrder:
+            self.addVariable(self.x(i,j))
 
     def x(self, i, j):
         return "x_{%i,%i}" % (i,j)
@@ -125,7 +129,7 @@ class BoundMatrixWithSplitConstraint(BoundMatrix):
         \sum_{i \in [m]} a_{i,j} x_{i,j} \leq c_j
 
     Where :math:`h_i` is a fresh variable. For all other rows and
-    columns the same constraitns as in BoundMatrix are used.
+    columns the same constraints as in BoundMatrix are used.
     """
     def h(self, i):
         return "h_{%i}" % (i)
@@ -133,7 +137,9 @@ class BoundMatrixWithSplitConstraint(BoundMatrix):
     def addAllVariables(self):
         super().addAllVariables()
         for i in range(self.numRows):
-            self.addVariable(self.h(i))
+            for j in range(self.numCols):
+                if self.a[i][j] != 1:
+                    self.addVariable(self.h(i))
 
     def addRowConstraint(self, i):
         T = [j for j in range(self.numCols) if self.a[i][j] != 1]
@@ -197,6 +203,8 @@ class BoundMatrixHelper(object):
                     help="add one to the rhs of a random row constraint")
         parser.add_argument('--lastRowOne','-l',default=False,action='store_true',
                     help="set the rhs of the last row to one")
+        parser.add_argument('--nonDiagonalFirst',default=False,action='store_true',
+                    help="change the variable order such that non diagonal entries have a smaller variable number")
 
         g = parser.add_mutually_exclusive_group()
         g.add_argument('--splitRows','-s',default=False,action='store_true',
@@ -220,9 +228,16 @@ class BoundMatrixHelper(object):
             u = random.choice(range(args.numRows))
             r[u] += 1
 
-        if args.splitRows:
-            return boundMatrixWithSplitConstraint(a,r,c)
-        elif args.doubleDiagonal:
-            return boundMatrixDoubleNotOne(a,r,c)
+        if args.nonDiagonalFirst:
+            varOrder = [(i,j) if j < i else (i,j+1) if j + 1 < args.numCols else (i,i)
+                for i in range(args.numRows)
+                    for j in range(args.numCols)]
         else:
-            return boundMatrix(a,r,c)
+            varOrder = None
+
+        if args.splitRows:
+            return boundMatrixWithSplitConstraint(a,r,c,varOrder)
+        elif args.doubleDiagonal:
+            return boundMatrixDoubleNotOne(a,r,c,varOrder)
+        else:
+            return boundMatrix(a,r,c,varOrder)
