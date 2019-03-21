@@ -979,7 +979,8 @@ class CNF(object):
                 raise RuntimeError("[Internal Error] Unknown type of constraints found: {}".format(type(cnst)))
 
 #        output.write("p.show()\n")
-        output.write("p.solve()\n")
+        output.write("import sys\n")
+        output.write("try:\n\tp.solve()\n\tprint(\"s SATISFIABLE\")\n\tsys.exit(int(10))\nexcept sage.numerical.mip.MIPSolverException:\n\tprint(\"s UNSATISFIABLE\")\n\tsys.exit(int(20))\n")
 #        output.write("p.get_values(x)\n")
         return output.getvalue()
 
