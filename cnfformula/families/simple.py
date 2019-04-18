@@ -7,13 +7,14 @@ from cnfformula.cnf import CNF
 
 import cnfformula.cmdline
 
+
 @cnfformula.cmdline.register_cnfgen_subcommand
 class OR(object):
     """Command line helper for a single clause formula
     """
 
-    name='or'
-    description='a single disjunction'
+    name = 'or'
+    description = 'a single disjunction'
 
     @staticmethod
     def setup_command_line(parser):
@@ -22,9 +23,10 @@ class OR(object):
         Arguments:
         - `parser`: parser to load with options.
         """
-        parser.add_argument('P',metavar='<P>',type=int,help="positive literals")
-        parser.add_argument('N',metavar='<N>',type=int,help="negative literals")
-
+        parser.add_argument('P', metavar='<P>', type=int,
+                            help="positive literals")
+        parser.add_argument('N', metavar='<N>', type=int,
+                            help="negative literals")
 
     @staticmethod
     def build_cnf(args):
@@ -33,10 +35,10 @@ class OR(object):
         Arguments:
         - `args`: command line options
         """
-        clause = [ (True,"x_{}".format(i)) for i in range(args.P) ] + \
-                 [ (False,"y_{}".format(i)) for i in range(args.N) ]
-        orcnf =  CNF([clause])
-        orcnf.header = "Clause with {} positive and {} negative literals\n\n".format(args.P,args.N) + \
+        clause = [(True, "x_{}".format(i)) for i in range(args.P)] + \
+                 [(False, "y_{}".format(i)) for i in range(args.N)]
+        orcnf = CNF([clause])
+        orcnf.header = "Clause with {} positive and {} negative literals\n\n".format(args.P, args.N) + \
                        orcnf.header
         return orcnf
 
@@ -45,8 +47,8 @@ class OR(object):
 class AND(object):
     """Command line helper for a 1-CNF (i.e. conjunction)
     """
-    name='and'
-    description='a single conjunction'
+    name = 'and'
+    description = 'a single conjunction'
 
     @staticmethod
     def setup_command_line(parser):
@@ -55,9 +57,10 @@ class AND(object):
         Arguments:
         - `parser`: parser to load with options.
         """
-        parser.add_argument('P',metavar='<P>',type=int,help="positive literals")
-        parser.add_argument('N',metavar='<N>',type=int,help="negative literals")
-
+        parser.add_argument('P', metavar='<P>', type=int,
+                            help="positive literals")
+        parser.add_argument('N', metavar='<N>', type=int,
+                            help="negative literals")
 
     @staticmethod
     def build_cnf(args):
@@ -66,10 +69,10 @@ class AND(object):
         Arguments:
         - `args`: command line options
         """
-        clauses = [ [(True,"x_{}".format(i))] for i in range(args.P) ] + \
-                  [ [(False,"y_{}".format(i))] for i in range(args.N) ]
-        andcnf =  CNF(clauses)
-        andcnf.header = "Singleton clauses: {} positive and {} negative\n\n""".format(args.P,args.N) +\
+        clauses = [[(True, "x_{}".format(i))] for i in range(args.P)] + \
+                  [[(False, "y_{}".format(i))] for i in range(args.N)]
+        andcnf = CNF(clauses)
+        andcnf.header = "Singleton clauses: {} positive and {} negative\n\n""".format(args.P, args.N) +\
                         andcnf.header
         return andcnf
 
@@ -79,8 +82,8 @@ class EMPTY(object):
     """Command line helper for the empty CNF (no clauses)
     """
 
-    name='empty'
-    description='empty CNF formula'
+    name = 'empty'
+    description = 'empty CNF formula'
 
     @staticmethod
     def setup_command_line(parser):
@@ -97,13 +100,14 @@ class EMPTY(object):
         """
         return CNF()
 
+
 @cnfformula.cmdline.register_cnfgen_subcommand
 class EMPTY_CLAUSE(object):
     """Command line helper for the contradiction (one empty clauses)  
     """
 
-    name='emptyclause'
-    description='one empty clause'
+    name = 'emptyclause'
+    description = 'one empty clause'
 
     @staticmethod
     def setup_command_line(parser):
@@ -119,4 +123,3 @@ class EMPTY_CLAUSE(object):
              command line options
         """
         return CNF([[]])
-

@@ -7,7 +7,7 @@ from cnfformula.families.subgraph import CliqueFormula
 from cnfformula.families.subgraph import RamseyWitnessFormula
 
 
-from cnfformula.graphs import readGraph,writeGraph
+from cnfformula.graphs import readGraph, writeGraph
 from io import StringIO as sio
 
 from . import TestCNFBase
@@ -15,14 +15,14 @@ from .test_commandline_helper import TestCommandline
 
 from itertools import combinations
 
-example1="""
+example1 = """
 3
 1 : 2 3 0
 2 : 1 0
 3 : 1 0
 """
 
-example1alt="""
+example1alt = """
 3
 1 : 3 0
 2 : 3 0
@@ -38,9 +38,8 @@ class TestSubgraphFormulas(TestCNFBase):
         p cnf 0 0
         """
         G = nx.complete_graph(4)
-        F = SubgraphFormula(G,[])
-        self.assertCnfEqualsDimacs(F,dimacs)
-
+        F = SubgraphFormula(G, [])
+        self.assertCnfEqualsDimacs(F, dimacs)
 
     def test_non_symmetric_input_wrong(self):
         """Symmetric encoding on non-symmetric graph
@@ -50,9 +49,10 @@ class TestSubgraphFormulas(TestCNFBase):
         even if it should be SAT.
 
         """
-        G = readGraph(sio(example1),"simple",file_format="kthlist")
-        T = readGraph(sio(example1alt),"simple",file_format="kthlist")
-        F = SubgraphFormula(G,[T],symmetric=True) # This should cause the wrong answer
+        G = readGraph(sio(example1), "simple", file_format="kthlist")
+        T = readGraph(sio(example1alt), "simple", file_format="kthlist")
+        # This should cause the wrong answer
+        F = SubgraphFormula(G, [T], symmetric=True)
         self.assertUNSAT(F)
 
     def test_non_symmetric_input_right(self):
@@ -63,11 +63,10 @@ class TestSubgraphFormulas(TestCNFBase):
         satisfiable, as it should be.
 
         """
-        G = readGraph(sio(example1),"simple",file_format="kthlist")
-        T = readGraph(sio(example1alt),"simple",file_format="kthlist")
-        F = SubgraphFormula(G,[T])
+        G = readGraph(sio(example1), "simple", file_format="kthlist")
+        T = readGraph(sio(example1alt), "simple", file_format="kthlist")
+        F = SubgraphFormula(G, [T])
         self.assertSAT(F)
-
 
     def test_non_symmetric_clause_generator(self):
         """Check a tricky case in the implementation
@@ -80,43 +79,44 @@ class TestSubgraphFormulas(TestCNFBase):
         """
         G = nx.complete_graph(4)
         T = nx.empty_graph(4)
-        F = SubgraphFormula(G,[T])
+        F = SubgraphFormula(G, [T])
         self.assertUNSAT(F)
 
     def test_non_symmetric_min_unsat(self):
         G = nx.complete_graph(4)
         T = nx.empty_graph(4)
-        edges = list(combinations(G.nodes(),2))
+        edges = list(combinations(G.nodes(), 2))
         T.add_edges_from(edges[1:])
-        F = SubgraphFormula(G,[T])
+        F = SubgraphFormula(G, [T])
         self.assertUNSAT(F)
-        
+
     def test_symmetric_min_unsat(self):
         G = nx.empty_graph(4)
-        G.add_edge(0,1)
+        G.add_edge(0, 1)
         T = nx.empty_graph(4)
-        F = SubgraphFormula(G,[T])
+        F = SubgraphFormula(G, [T])
         self.assertUNSAT(F)
-        
+
+
 class TestSubgraphCommandline(TestCommandline):
     def test_parameters(self):
-        for base in range(2,5):
-            for template in range(2,5):
-                parameters = ["cnfgen","-q","subgraph",
+        for base in range(2, 5):
+            for template in range(2, 5):
+                parameters = ["cnfgen", "-q", "subgraph",
                               "--complete", base,
-                              "--completeT" , template]
+                              "--completeT", template]
                 G = nx.complete_graph(base)
                 T = nx.complete_graph(template)
-                F = SubgraphFormula(G,[T])
-                self.checkFormula(sys.stdin,F, parameters)
+                F = SubgraphFormula(G, [T])
+                self.checkFormula(sys.stdin, F, parameters)
 
-                parameters = ["cnfgen","-q","subgraph",
+                parameters = ["cnfgen", "-q", "subgraph",
                               "--complete", base,
-                              "--emptyT" , template]
+                              "--emptyT", template]
                 G = nx.complete_graph(base)
                 T = nx.empty_graph(template)
-                F = SubgraphFormula(G,[T])
-                self.checkFormula(sys.stdin,F, parameters)
+                F = SubgraphFormula(G, [T])
+                self.checkFormula(sys.stdin, F, parameters)
 
 # class TestBinaryPigeonholePrincipleCommandline(TestCommandline):
 #     def test_parameters(self):

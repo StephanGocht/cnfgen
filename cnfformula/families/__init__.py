@@ -4,7 +4,8 @@
 """
 
 
-__cnf_generator_mark = "_is_cnf_generator" 
+__cnf_generator_mark = "_is_cnf_generator"
+
 
 def register_cnf_generator(func):
     """Register the fucntion as a formula generator
@@ -28,7 +29,7 @@ def register_cnf_generator(func):
         when the argument is not a function
     """
     assert callable(func)
-    setattr(func,__cnf_generator_mark,True)
+    setattr(func, __cnf_generator_mark, True)
     return func
 
 
@@ -44,4 +45,4 @@ def is_cnf_generator(func):
     -------
     bool
     """
-    return hasattr(func,__cnf_generator_mark)
+    return hasattr(func, __cnf_generator_mark)

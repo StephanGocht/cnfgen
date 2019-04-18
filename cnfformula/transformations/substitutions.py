@@ -2,19 +2,19 @@
 # -*- coding:utf-8 -*-
 
 
-
 from ..cnf import CNF, disj
 
-from ..cmdline  import register_cnf_transformation_subcommand,BipartiteGraphHelper
+from ..cmdline import register_cnf_transformation_subcommand, BipartiteGraphHelper
 from ..transformations import register_cnf_transformation
 
-from itertools import combinations,product,permutations
-from cnfformula.graphs import bipartite_sets,neighbors
+from itertools import combinations, product, permutations
+from cnfformula.graphs import bipartite_sets, neighbors
 import sys
 
 ###
-### Substitions
+# Substitions
 ###
+
 
 class BaseSubstitution(CNF):
     """Apply a substitution to a formula
@@ -27,7 +27,7 @@ class BaseSubstitution(CNF):
         - `cnf`: the original cnf
         """
         self._orig_cnf = cnf
-        super(BaseSubstitution,self).__init__([],header=cnf._header)
+        super(BaseSubstitution, self).__init__([], header=cnf._header)
 
         # Load original variable names
         #
@@ -41,44 +41,45 @@ class BaseSubstitution(CNF):
         varadditional = [None]*(len(variablenames))
 
         # Transform all possible literals
-        for i in range(1,len(variablenames)):
-            varadditional[i] =self.transform_variable_preamble(variablenames[i])
-            substitutions[i] =self.transform_a_literal(True, variablenames[i])
-            substitutions[-i]=self.transform_a_literal(False,variablenames[i])
-
+        for i in range(1, len(variablenames)):
+            varadditional[i] = self.transform_variable_preamble(
+                variablenames[i])
+            substitutions[i] = self.transform_a_literal(True, variablenames[i])
+            substitutions[-i] = self.transform_a_literal(
+                False, variablenames[i])
 
         self.allow_readd_variables = True
         # Collect new variable names from the CNFs:
         # clause compression needs the variable names
         if new_variables is None:
-            for i in range(1,len(variablenames)):
+            for i in range(1, len(variablenames)):
                 for clause in varadditional[i]+substitutions[i]+substitutions[-i]:
-                    for _,varname in clause:
+                    for _, varname in clause:
                         self.add_variable(varname)
         else:
             for v in new_variables:
                 self.add_variable(v)
 
         # Compress substitution cnfs
-        for i in range(1,len(varadditional)):
-            varadditional[i] =[disj(*self._check_and_compress_literals(cls))
-                               for cls in varadditional[i] ]
+        for i in range(1, len(varadditional)):
+            varadditional[i] = [disj(*self._check_and_compress_literals(cls))
+                                for cls in varadditional[i]]
 
-        for i in range(1,len(substitutions)):
-            substitutions[i] =[list(disj(*self._check_and_compress_literals(cls)))
-                               for cls in substitutions[i] ]
+        for i in range(1, len(substitutions)):
+            substitutions[i] = [list(disj(*self._check_and_compress_literals(cls)))
+                                for cls in substitutions[i]]
 
         # build and add new clauses
         for orig_cnst in self._orig_cnf._constraints:
             for orig_cls in orig_cnst.clauses():
 
                 # a substituted clause is the OR of the substituted literals
-                domains=[ substitutions[lit] for lit in orig_cls ]
-                domains=tuple(domains)
+                domains = [substitutions[lit] for lit in orig_cls]
+                domains = tuple(domains)
 
-                block = [ disj(*[lit for clause in clause_tuple
-                                 for lit in clause ])
-                          for clause_tuple in product(*domains)]
+                block = [disj(*[lit for clause in clause_tuple
+                                for lit in clause])
+                         for clause_tuple in product(*domains)]
 
                 self._add_compressed_constraints(block)
 
@@ -99,7 +100,6 @@ class BaseSubstitution(CNF):
         """
         return []
 
-
     def transform_a_literal(self, polarity, name):
         """Substitute a literal with the transformation function
 
@@ -109,7 +109,7 @@ class BaseSubstitution(CNF):
 
         Returns: a list of clauses
         """
-        return [ [ (polarity,name) ] ]
+        return [[(polarity, name)]]
 
 
 @register_cnf_transformation
@@ -117,6 +117,7 @@ class IfThenElseSubstitution(BaseSubstitution):
     """Transformed formula: substitutes variable with a three variables
     if-then-else
     """
+
     def __init__(self, cnf):
         """Build a new CNF obtained by substituting an if-then-else to the
         variables of the original CNF
@@ -124,11 +125,11 @@ class IfThenElseSubstitution(BaseSubstitution):
         Arguments:
         - `cnf`: the original cnf
         """
-        super(IfThenElseSubstitution,self).__init__(cnf)
+        super(IfThenElseSubstitution, self).__init__(cnf)
 
-        self._header="If-Then-Else substituted formula\n\n" + self._header
+        self._header = "If-Then-Else substituted formula\n\n" + self._header
 
-    def transform_a_literal(self, polarity,varname):
+    def transform_a_literal(self, polarity, varname):
         """Substitute a positive literal with an if then else statement,
 
         Arguments:
@@ -141,13 +142,14 @@ class IfThenElseSubstitution(BaseSubstitution):
         Y = "{{{}}}^1".format(varname)
         Z = "{{{}}}^2".format(varname)
 
-        return [ [ (False,X) , (polarity,Y) ] , [ (True, X) , (polarity,Z) ] ]
+        return [[(False, X), (polarity, Y)], [(True, X), (polarity, Z)]]
 
 
 @register_cnf_transformation
 class MajoritySubstitution(BaseSubstitution):
     """Transformed formula: substitutes variable with a Majority
     """
+
     def __init__(self, cnf, rank):
         """Build a new CNF obtained by substituting a Majority to the
         variables of the original CNF
@@ -158,12 +160,12 @@ class MajoritySubstitution(BaseSubstitution):
         """
         self._rank = rank
 
-        super(MajoritySubstitution,self).__init__(cnf)
+        super(MajoritySubstitution, self).__init__(cnf)
 
-        self._header="Majority {} substituted formula\n\n".format(self._rank) \
-            +self._header
+        self._header = "Majority {} substituted formula\n\n".format(self._rank) \
+            + self._header
 
-    def transform_a_literal(self, polarity,varname):
+    def transform_a_literal(self, polarity, varname):
         """Substitute a positive literal with Loose Majority,
         and negative literals with Strict Minority.
 
@@ -177,23 +179,23 @@ class MajoritySubstitution(BaseSubstitution):
         Returns: a list of clauses
         """
 
-        variables = [ "{{{}}}^{}".format(varname,i) for i in range(self._rank) ]
+        variables = ["{{{}}}^{}".format(varname, i) for i in range(self._rank)]
 
-        threshold = (self._rank + 1) // 2 # loose majority
+        threshold = (self._rank + 1) // 2  # loose majority
         temp = CNF()
         if polarity:
-            temp.add_greater_or_equal(variables,threshold)
+            temp.add_greater_or_equal(variables, threshold)
         else:
-            temp.add_strictly_less_than(variables,threshold)
+            temp.add_strictly_less_than(variables, threshold)
 
         return list(temp)
-
 
 
 @register_cnf_transformation
 class OrSubstitution(BaseSubstitution):
     """Transformed formula: substitutes variable with a OR
     """
+
     def __init__(self, cnf, rank):
         """Build a new CNF obtained by substituting a OR to the
         variables of the original CNF
@@ -204,14 +206,12 @@ class OrSubstitution(BaseSubstitution):
         """
         self._rank = rank
 
-        super(OrSubstitution,self).__init__(cnf)
+        super(OrSubstitution, self).__init__(cnf)
 
-        self._header="OR {} substituted formula\n\n".format(self._rank) \
-            +self._header
+        self._header = "OR {} substituted formula\n\n".format(self._rank) \
+            + self._header
 
-
-
-    def transform_a_literal(self, polarity,varname):
+    def transform_a_literal(self, polarity, varname):
         """Substitute a positive literal with an OR,
         and negative literals with its negation.
 
@@ -221,17 +221,18 @@ class OrSubstitution(BaseSubstitution):
 
         Returns: a list of clauses
         """
-        names = [ "{{{}}}^{}".format(varname,i) for i in range(self._rank) ]
+        names = ["{{{}}}^{}".format(varname, i) for i in range(self._rank)]
         if polarity:
-            return [[ (True,name) for name in names ]]
+            return [[(True, name) for name in names]]
         else:
-            return [ [(False,name)] for name in names ]
+            return [[(False, name)] for name in names]
 
 
 @register_cnf_transformation
 class AllEqualSubstitution(BaseSubstitution):
     """Transformed formula: substitutes variable with 'all equals'
     """
+
     def __init__(self, cnf, rank):
         """Build a new CNF obtained by substituting 'all equals' to the
         variables of the original CNF
@@ -242,12 +243,12 @@ class AllEqualSubstitution(BaseSubstitution):
         """
         self._rank = rank
 
-        super(AllEqualSubstitution,self).__init__(cnf)
+        super(AllEqualSubstitution, self).__init__(cnf)
 
-        self._header="EQ {} substituted formula\n\n".format(self._rank) \
-            +self._header
+        self._header = "EQ {} substituted formula\n\n".format(self._rank) \
+            + self._header
 
-    def transform_a_literal(self, polarity,varname):
+    def transform_a_literal(self, polarity, varname):
         """Substitute a positive literal with an 'all equal' statement,
 
         Arguments:
@@ -256,18 +257,22 @@ class AllEqualSubstitution(BaseSubstitution):
 
         Returns: a list of clauses
         """
-        names = [ "{{{}}}^{}".format(varname,i) for i in range(self._rank) ]
-        pairs = permutations(names,2)
+        names = ["{{{}}}^{}".format(varname, i) for i in range(self._rank)]
+        pairs = permutations(names, 2)
         if polarity:
-            return [ [ (False,a) , (True,b) ] for a,b in pairs ] # a true variable implies all the others to true.
+            # a true variable implies all the others to true.
+            return [[(False, a), (True, b)] for a, b in pairs]
 
         else:
-            return [[ (False,a) for a in names ] , [ (True,a) for a in names ] ] # at least a true and a false variable.
+            # at least a true and a false variable.
+            return [[(False, a) for a in names], [(True, a) for a in names]]
+
 
 @register_cnf_transformation
 class NotAllEqualSubstitution(AllEqualSubstitution):
     """Transformed formula: substitutes variable with 'not all equals'
     """
+
     def __init__(self, cnf, rank):
         """Build a new CNF obtained by substituting 'not all equals' to the
         variables of the original CNF
@@ -276,11 +281,11 @@ class NotAllEqualSubstitution(AllEqualSubstitution):
         - `cnf`: the original cnf
         - `rank`: how many variables in each or
         """
-        super(NotAllEqualSubstitution,self).__init__(cnf,rank)
+        super(NotAllEqualSubstitution, self).__init__(cnf, rank)
 
-        self._header="N"+self._header
+        self._header = "N"+self._header
 
-    def transform_a_literal(self, polarity,varname):
+    def transform_a_literal(self, polarity, varname):
         """Substitute a positive literal with an 'not all equal' statement,
 
         Arguments:
@@ -289,12 +294,14 @@ class NotAllEqualSubstitution(AllEqualSubstitution):
 
         Returns: a list of clauses
         """
-        return AllEqualSubstitution.transform_a_literal(self,not polarity,varname)
+        return AllEqualSubstitution.transform_a_literal(self, not polarity, varname)
+
 
 @register_cnf_transformation
 class XorSubstitution(BaseSubstitution):
     """Transformed formula: substitutes variable with a XOR
     """
+
     def __init__(self, cnf, rank):
         """Build a new CNF obtained by substituting a XOR to the
         variables of the original CNF
@@ -305,12 +312,12 @@ class XorSubstitution(BaseSubstitution):
         """
         self._rank = rank
 
-        super(XorSubstitution,self).__init__(cnf)
+        super(XorSubstitution, self).__init__(cnf)
 
-        self._header="XOR {} substituted formula\n\n".format(self._rank) \
-            +self._header
+        self._header = "XOR {} substituted formula\n\n".format(self._rank) \
+            + self._header
 
-    def transform_a_literal(self, polarity,varname):
+    def transform_a_literal(self, polarity, varname):
         """Substitute a literal with a (negated) XOR
 
         Arguments:
@@ -320,14 +327,16 @@ class XorSubstitution(BaseSubstitution):
         Returns: a list of clauses
         """
         temp = CNF()
-        temp.add_parity(["{{{}}}^{}".format(varname,i) for i in range(self._rank)],
+        temp.add_parity(["{{{}}}^{}".format(varname, i) for i in range(self._rank)],
                         1 if polarity else 0)
         return list(temp)
+
 
 @register_cnf_transformation
 class FormulaLifting(BaseSubstitution):
     """Formula lifting: Y variable select X values
     """
+
     def __init__(self, cnf, rank):
         """Build a new CNF obtained by lifting procedures
 
@@ -337,11 +346,10 @@ class FormulaLifting(BaseSubstitution):
         """
         self._rank = rank
 
-        super(FormulaLifting,self).__init__(cnf)
+        super(FormulaLifting, self).__init__(cnf)
 
-        self._header="Formula with lifting with selectors over {} values\n\n".format(self._rank) \
-            +self._header
-
+        self._header = "Formula with lifting with selectors over {} values\n\n".format(self._rank) \
+            + self._header
 
     def transform_variable_preamble(self, name):
         """Additional clauses for each lifted variable
@@ -351,16 +359,16 @@ class FormulaLifting(BaseSubstitution):
 
         Returns: a list of clauses
         """
-        selector_clauses=[]
-        selector_clauses.append([ (True,   "Y_{{{}}}^{}".format(name,i)) for i in range(self._rank)])
+        selector_clauses = []
+        selector_clauses.append(
+            [(True,   "Y_{{{}}}^{}".format(name, i)) for i in range(self._rank)])
 
-        for s1,s2 in combinations(["Y_{{{}}}^{}".format(name,i) for i in range(self._rank)],2):
-                selector_clauses.append([(False,s1),(False,s2)])
+        for s1, s2 in combinations(["Y_{{{}}}^{}".format(name, i) for i in range(self._rank)], 2):
+            selector_clauses.append([(False, s1), (False, s2)])
 
         return selector_clauses
 
-
-    def transform_a_literal(self, polarity,varname):
+    def transform_a_literal(self, polarity, varname):
         """Substitute a literal with a (negated) XOR
 
         Arguments:
@@ -369,10 +377,10 @@ class FormulaLifting(BaseSubstitution):
 
         Returns: a list of clauses
         """
-        clauses=[]
+        clauses = []
         for i in range(self._rank):
-            clauses.append([ (False,   "Y_{{{}}}^{}".format(varname,i)),
-                             (polarity,"X_{{{}}}^{}".format(varname,i)) ])
+            clauses.append([(False,   "Y_{{{}}}^{}".format(varname, i)),
+                            (polarity, "X_{{{}}}^{}".format(varname, i))])
         return clauses
 
 
@@ -380,6 +388,7 @@ class FormulaLifting(BaseSubstitution):
 class ExactlyOneSubstitution(BaseSubstitution):
     """Transformed formula: exactly one variable is true
     """
+
     def __init__(self, cnf, rank):
         """Build a new CNF obtained substituting all variables with
         'exactly one' function.
@@ -390,13 +399,13 @@ class ExactlyOneSubstitution(BaseSubstitution):
         """
         self._rank = rank
 
-        super(ExactlyOneSubstitution,self).__init__(cnf)
+        super(ExactlyOneSubstitution, self).__init__(cnf)
 
-        self._header="Formula transformed by \"exactly one\""+ \
-                     " substitution over {} values\n\n".format(self._rank) \
-                     +self._header
+        self._header = "Formula transformed by \"exactly one\"" + \
+            " substitution over {} values\n\n".format(self._rank) \
+            + self._header
 
-    def transform_a_literal(self, polarity,varname):
+    def transform_a_literal(self, polarity, varname):
         """Substitute a literal with an \"Exactly One\"
 
         Arguments:
@@ -405,20 +414,21 @@ class ExactlyOneSubstitution(BaseSubstitution):
 
         Returns: a list of clauses
         """
-        clauses=[]
-        varnames=["X_{{{}}}^{}".format(varname,i) for i in range(self._rank)]
+        clauses = []
+        varnames = ["X_{{{}}}^{}".format(varname, i)
+                    for i in range(self._rank)]
 
         if polarity:
             # at least one variable is true
-            clauses.append([ (True,name) for name in varnames ])
+            clauses.append([(True, name) for name in varnames])
             # no two variables are true
-            for (n1,n2) in combinations(varnames,2):
-                clauses.append([ (False,n1), (False,n2)])
+            for (n1, n2) in combinations(varnames, 2):
+                clauses.append([(False, n1), (False, n2)])
         else:
             # if all variables but one are false, the other must be false
             for name in varnames:
-                clauses.append([(False,name)]+
-                               [(True,other) for other in varnames if other!=name])
+                clauses.append([(False, name)] +
+                               [(True, other) for other in varnames if other != name])
         return clauses
 
 
@@ -430,8 +440,8 @@ class VariableCompression(BaseSubstitution):
     a subset of a new set of variables (usually smaller).
     """
 
-    _name_vertex_dict={}
-    _pattern  = None
+    _name_vertex_dict = {}
+    _pattern = None
     _function = None
 
     def __init__(self, cnf, B, function='xor'):
@@ -451,25 +461,28 @@ class VariableCompression(BaseSubstitution):
             be one among 'xor' or 'maj'.
 
         """
-        if function not in ['xor','maj']:
-            raise ValueError("Function specification for variable compression must be either 'xor' or 'maj'.")
+        if function not in ['xor', 'maj']:
+            raise ValueError(
+                "Function specification for variable compression must be either 'xor' or 'maj'.")
 
-        Left,Right = bipartite_sets(B)
+        Left, Right = bipartite_sets(B)
 
         if len(Right) != len(list(cnf.variables())):
-            raise ValueError("Right side of the graph must match the variable numbers of the CNF.")
+            raise ValueError(
+                "Right side of the graph must match the variable numbers of the CNF.")
 
         self._pattern = B
         self._function = function
-        for n,v in zip(cnf.variables(),Right):
-            self._name_vertex_dict[n]=v
+        for n, v in zip(cnf.variables(), Right):
+            self._name_vertex_dict[n] = v
 
-        super(VariableCompression,self).__init__(cnf, new_variables = ["Y_{{{0}}}".format(i) for i in Left])
+        super(VariableCompression, self).__init__(
+            cnf, new_variables=["Y_{{{0}}}".format(i) for i in Left])
 
-        self._header="Variable {}-compression from {} to {} variables\n\n".format(function,len(Right),len(Left)) \
-            +self._header
+        self._header = "Variable {}-compression from {} to {} variables\n\n".format(function, len(Right), len(Left)) \
+            + self._header
 
-    def transform_a_literal(self, polarity,varname):
+    def transform_a_literal(self, polarity, varname):
         """Substitute a literal with a (negated) XOR
 
         Arguments:
@@ -479,134 +492,147 @@ class VariableCompression(BaseSubstitution):
         Returns: a list of clauses
         """
         varname = self._name_vertex_dict[varname]
-        local_vars  = neighbors(self._pattern,varname)
-        local_names = ["Y_{{{0}}}".format(i) for i in local_vars ]
+        local_vars = neighbors(self._pattern, varname)
+        local_names = ["Y_{{{0}}}".format(i) for i in local_vars]
 
         if self._function == 'xor':
 
             temp = CNF()
-            temp.add_parity(local_names,1 if polarity else 0)
+            temp.add_parity(local_names, 1 if polarity else 0)
             return list(temp)
 
         elif self._function == 'maj':
 
-            threshold = (len(local_names)+1) // 2 # loose majority
+            threshold = (len(local_names)+1) // 2  # loose majority
 
             if polarity:
-                return list(self.greater_or_equal_constraint(local_names, threshold ))
+                return list(self.greater_or_equal_constraint(local_names, threshold))
             else:
-                return list(self.less_than_constraint(local_names, threshold ))
+                return list(self.less_than_constraint(local_names, threshold))
 
         else:
-            raise RuntimeError("Error: variable compression with invalid function")
+            raise RuntimeError(
+                "Error: variable compression with invalid function")
 
 #
 # Command line helpers for these substitutions
 #
 @register_cnf_transformation_subcommand
 class NoSubstitutionCmd:
-    name='none'
-    description='no transformation'
+    name = 'none'
+    description = 'no transformation'
 
     @staticmethod
     def setup_command_line(parser):
         pass
 
     @staticmethod
-    def transform_cnf(F,args):
+    def transform_cnf(F, args):
         return F
+
 
 @register_cnf_transformation_subcommand
 class OrSubstitutionCmd:
-    name='or'
-    description='substitute variable x with OR(x1,x2,...,xN)'
+    name = 'or'
+    description = 'substitute variable x with OR(x1,x2,...,xN)'
 
     @staticmethod
     def setup_command_line(parser):
-        parser.add_argument('N',type=int,nargs='?',default=2,action='store',help="arity (default: 2)")
+        parser.add_argument('N', type=int, nargs='?', default=2,
+                            action='store', help="arity (default: 2)")
 
     @staticmethod
-    def transform_cnf(F,args):
-        return  OrSubstitution(F,args.N)
+    def transform_cnf(F, args):
+        return OrSubstitution(F, args.N)
+
 
 @register_cnf_transformation_subcommand
 class XorSubstitutionCmd:
-    name='xor'
-    description='substitute variable x with XOR(x1,x2,...,xN)'
+    name = 'xor'
+    description = 'substitute variable x with XOR(x1,x2,...,xN)'
 
     @staticmethod
     def setup_command_line(parser):
-        parser.add_argument('N',type=int,nargs='?',default=2,action='store',help="arity (default: 2)")
+        parser.add_argument('N', type=int, nargs='?', default=2,
+                            action='store', help="arity (default: 2)")
 
     @staticmethod
-    def transform_cnf(F,args):
-        return  XorSubstitution(F,args.N)
+    def transform_cnf(F, args):
+        return XorSubstitution(F, args.N)
+
 
 @register_cnf_transformation_subcommand
 class AllEqualsSubstitutionCmd:
-    name='eq'
-    description='substitute variable x with predicate x1==x2==...==xN (i.e. all equals)'
+    name = 'eq'
+    description = 'substitute variable x with predicate x1==x2==...==xN (i.e. all equals)'
 
     @staticmethod
     def setup_command_line(parser):
-        parser.add_argument('N',type=int,nargs='?',default=3,action='store',help="arity (default: 3)")
+        parser.add_argument('N', type=int, nargs='?', default=3,
+                            action='store', help="arity (default: 3)")
 
     @staticmethod
-    def transform_cnf(F,args):
-        return  AllEqualSubstitution(F,args.N)
+    def transform_cnf(F, args):
+        return AllEqualSubstitution(F, args.N)
+
 
 @register_cnf_transformation_subcommand
 class NeqSubstitutionCmd:
-    name='neq'
-    description='substitute variable x with predicate |{x1,x2,...,xN}|>1 (i.e. not all equals)'
+    name = 'neq'
+    description = 'substitute variable x with predicate |{x1,x2,...,xN}|>1 (i.e. not all equals)'
 
     @staticmethod
     def setup_command_line(parser):
-        parser.add_argument('N',type=int,nargs='?',default=3,action='store',help="arity (default: 3)")
+        parser.add_argument('N', type=int, nargs='?', default=3,
+                            action='store', help="arity (default: 3)")
 
     @staticmethod
-    def transform_cnf(F,args):
-        return  NotAllEqualSubstitution(F,args.N)
+    def transform_cnf(F, args):
+        return NotAllEqualSubstitution(F, args.N)
+
 
 @register_cnf_transformation_subcommand
 class MajSubstitution:
-    name='maj'
-    description='substitute variable x with predicate Majority(x1,x2,...,xN)'
+    name = 'maj'
+    description = 'substitute variable x with predicate Majority(x1,x2,...,xN)'
 
     @staticmethod
     def setup_command_line(parser):
-        parser.add_argument('N',type=int,nargs='?',default=3,action='store',help="arity (default: 3)")
+        parser.add_argument('N', type=int, nargs='?', default=3,
+                            action='store', help="arity (default: 3)")
 
     @staticmethod
-    def transform_cnf(F,args):
-        return  MajoritySubstitution(F,args.N)
+    def transform_cnf(F, args):
+        return MajoritySubstitution(F, args.N)
+
 
 @register_cnf_transformation_subcommand
 class IfThenElseSubstitutionCmd:
-    name='ite'
-    description='substitute variable x with predicate "if X then Y else Z"'
+    name = 'ite'
+    description = 'substitute variable x with predicate "if X then Y else Z"'
 
     @staticmethod
     def setup_command_line(parser):
         pass
 
     @staticmethod
-    def transform_cnf(F,args):
-        return  IfThenElseSubstitution(F)
+    def transform_cnf(F, args):
+        return IfThenElseSubstitution(F)
+
 
 @register_cnf_transformation_subcommand
 class ExactlyOneSubstitutionCmd:
-    name='one'
-    description='substitute variable x with predicate x1+x2+...+xN = 1'
+    name = 'one'
+    description = 'substitute variable x with predicate x1+x2+...+xN = 1'
 
     @staticmethod
     def setup_command_line(parser):
-        parser.add_argument('N',type=int,nargs='?',default=3,action='store',help="arity (default: 3)")
+        parser.add_argument('N', type=int, nargs='?', default=3,
+                            action='store', help="arity (default: 3)")
 
     @staticmethod
-    def transform_cnf(F,args):
-        return  ExactlyOneSubstitution(F,args.N)
-
+    def transform_cnf(F, args):
+        return ExactlyOneSubstitution(F, args.N)
 
 
 # Technically lifting is not a substitution, therefore it should be in
@@ -616,54 +642,54 @@ class ExactlyOneSubstitutionCmd:
 class FormulaLiftingCmd:
     """Lifting
     """
-    name='lift'
-    description='one dimensional lifting  x -->  x1 y1  OR ... OR xN yN, with y1+..+yN = 1'
+    name = 'lift'
+    description = 'one dimensional lifting  x -->  x1 y1  OR ... OR xN yN, with y1+..+yN = 1'
 
     @staticmethod
     def setup_command_line(parser):
-        parser.add_argument('N',type=int,nargs='?',default=3,action='store',help="arity (default: 3)")
+        parser.add_argument('N', type=int, nargs='?', default=3,
+                            action='store', help="arity (default: 3)")
 
     @staticmethod
-    def transform_cnf(F,args):
-        return FormulaLifting(F,args.N)
+    def transform_cnf(F, args):
+        return FormulaLifting(F, args.N)
 
 
 @register_cnf_transformation_subcommand
 class XorCompressionCmd:
-    name='xorcomp'
-    description='variable compression using XOR'
+    name = 'xorcomp'
+    description = 'variable compression using XOR'
 
     @staticmethod
     def setup_command_line(parser):
         BipartiteGraphHelper.setup_command_line(parser)
 
     @staticmethod
-    def transform_cnf(F,args):
+    def transform_cnf(F, args):
         B = BipartiteGraphHelper.obtain_graph(args)
 
         try:
-            return  VariableCompression(F,B,function='xor')
+            return VariableCompression(F, B, function='xor')
         except ValueError as e:
-            print("ERROR: {}".format(e),file=sys.stderr)
+            print("ERROR: {}".format(e), file=sys.stderr)
             exit(-1)
 
 
 @register_cnf_transformation_subcommand
 class MajCompressionCmd:
-    name='majcomp'
-    description='variable compression using Majority'
+    name = 'majcomp'
+    description = 'variable compression using Majority'
 
     @staticmethod
     def setup_command_line(parser):
         BipartiteGraphHelper.setup_command_line(parser)
 
     @staticmethod
-    def transform_cnf(F,args):
+    def transform_cnf(F, args):
         B = BipartiteGraphHelper.obtain_graph(args)
 
         try:
-            return  VariableCompression(F,B,function='maj')
+            return VariableCompression(F, B, function='maj')
         except ValueError as e:
-            print("ERROR: {}".format(e),file=sys.stderr)
+            print("ERROR: {}".format(e), file=sys.stderr)
             exit(-1)
-

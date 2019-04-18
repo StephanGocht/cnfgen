@@ -12,10 +12,11 @@ from textwrap import dedent
 from itertools import combinations
 from math import sqrt
 
+
 @cnfformula.families.register_cnf_generator
 def PythagoreanTriples(N):
     """There is a Pythagorean triples free coloring on N 
-    
+
     The formula claims that it is possible to bicolor the numbers from
     1 to :math:`N` so that there  is no monochromatic triplet 
     :math:`(x,y,z)` so that :math:`x^2+y^2=z^2`.
@@ -41,9 +42,9 @@ def PythagoreanTriples(N):
            arXiv preprint arXiv:1605.00723, 2016.
     """
 
-    ptn=CNF()
+    ptn = CNF()
 
-    ptn.header=dedent("""
+    ptn.header = dedent("""
 It is possible to bicolor the numbers from
 1 to {} so that there  is no monochromatic triplets
 (x,y,z) such that x^2+y^2=z^2
@@ -54,22 +55,20 @@ It is possible to bicolor the numbers from
         return "x_{{{}}}".format(i)
 
     # Variables represent the coloring of the number
-    for i in range(1,N+1):
+    for i in range(1, N+1):
         ptn.add_variable(V(i))
 
-        
-    for x,y in combinations(list(range(1,N+1)),2):
-        z = int(sqrt(x**2 +  y**2))
-        if z <=N and z**2 == x**2 + y**2:
-            ptn.add_clause([ (True, V(x)), (True, V(y)), (True, V(z))])
-            ptn.add_clause([ (False,V(x)), (False,V(y)), (False,V(z))])
+    for x, y in combinations(list(range(1, N+1)), 2):
+        z = int(sqrt(x**2 + y**2))
+        if z <= N and z**2 == x**2 + y**2:
+            ptn.add_clause([(True, V(x)), (True, V(y)), (True, V(z))])
+            ptn.add_clause([(False, V(x)), (False, V(y)), (False, V(z))])
 
     return ptn
 
 
-
 @cnfformula.families.register_cnf_generator
-def RamseyLowerBoundFormula(s,k,N):
+def RamseyLowerBoundFormula(s, k, N):
     """Formula claiming that Ramsey number r(s,k) > N
 
     Arguments:
@@ -78,50 +77,49 @@ def RamseyLowerBoundFormula(s,k,N):
     - `N`: vertices
     """
 
-    ram=CNF()
+    ram = CNF()
     ram.mode_strict()
 
-    ram.header=dedent("""\
+    ram.header = dedent("""\
         CNF encoding of the claim that there is a graph of %d vertices
         with no independent set of size %d and no clique of size %d
-        """ % (N,s,k)) + ram.header
+        """ % (N, s, k)) + ram.header
 
     #
     # One variable per edge (indices are ordered)
     #
-    for edge in combinations(range(1,N+1),2):
+    for edge in combinations(range(1, N+1), 2):
         ram.add_variable('e_{{{0},{1}}}'.format(*edge))
-    
+
     #
     # No independent set of size s
     #
-    for vertex_set in combinations(range(1,N+1),s):
-        clause=[]
-        for edge in combinations(vertex_set,2):
-            clause += [(True,'e_{{{0},{1}}}'.format(*edge))]
+    for vertex_set in combinations(range(1, N+1), s):
+        clause = []
+        for edge in combinations(vertex_set, 2):
+            clause += [(True, 'e_{{{0},{1}}}'.format(*edge))]
         ram.add_clause(clause)
 
     #
     # No clique of size k
     #
-    for vertex_set in combinations(range(1,N+1),k):
-        clause=[]
-        for edge in combinations(vertex_set,2):
-            clause+=[(False,'e_{{{0},{1}}}'.format(*edge))]
+    for vertex_set in combinations(range(1, N+1), k):
+        clause = []
+        for edge in combinations(vertex_set, 2):
+            clause += [(False, 'e_{{{0},{1}}}'.format(*edge))]
         ram.add_clause(clause)
 
     return ram
 
 
+# Formula families
 
-### Formula families
-    
 @cnfformula.cmdline.register_cnfgen_subcommand
 class RamseyCmdHelper(object):
     """Command line helper for RamseyNumber formulas
     """
-    name='ram'
-    description='ramsey number principle'
+    name = 'ram'
+    description = 'ramsey number principle'
 
     @staticmethod
     def setup_command_line(parser):
@@ -130,9 +128,11 @@ class RamseyCmdHelper(object):
         Arguments:
         - `parser`: parser to load with options.
         """
-        parser.add_argument('s',metavar='<s>',type=int,help="Forbidden independent set size")
-        parser.add_argument('k',metavar='<k>',type=int,help="Forbidden independent clique")
-        parser.add_argument('N',metavar='<N>',type=int,help="Graph size")
+        parser.add_argument('s', metavar='<s>', type=int,
+                            help="Forbidden independent set size")
+        parser.add_argument('k', metavar='<k>', type=int,
+                            help="Forbidden independent clique")
+        parser.add_argument('N', metavar='<N>', type=int, help="Graph size")
 
     @staticmethod
     def build_cnf(args):
@@ -148,8 +148,8 @@ class RamseyCmdHelper(object):
 class PTNCmdHelper(object):
     """Command line helper for PTN formulas
     """
-    name='ptn'
-    description='Bicoloring of N with no monochromatic Pythagorean Triples'
+    name = 'ptn'
+    description = 'Bicoloring of N with no monochromatic Pythagorean Triples'
 
     @staticmethod
     def setup_command_line(parser):
@@ -158,7 +158,8 @@ class PTNCmdHelper(object):
         Arguments:
         - `parser`: parser to load with options.
         """
-        parser.add_argument('N',metavar='<N>',type=int,help="Size of the domain")
+        parser.add_argument('N', metavar='<N>', type=int,
+                            help="Size of the domain")
 
     @staticmethod
     def build_cnf(args):
@@ -168,5 +169,3 @@ class PTNCmdHelper(object):
         - `args`: command line options
         """
         return PythagoreanTriples(args.N)
-
-

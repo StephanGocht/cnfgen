@@ -3,6 +3,7 @@ import cnfformula.cnf as cnf
 import cnfformula.cmdline
 import cnfformula.families
 
+
 @cnfformula.families.register_cnf_generator
 def BinPacking(numBins, binSize, items):
     r"""In the bein packing problem, objects of different volumes must be packed
@@ -37,7 +38,6 @@ def BinPacking(numBins, binSize, items):
 
     """
 
-
     F = cnf.CNF()
     F.header += "numBins: %d, binSize: %d \n" % (numBins, binSize)
     F.header += "items sizes: "
@@ -56,14 +56,13 @@ def BinPacking(numBins, binSize, items):
         F.add_linear(
             *toArgs([(1, (item, aBin)) for aBin in range(numBins)],
                     ">=", 1
-                )
+                    )
         )
 
     # Each bin has no more than size items
     for aBin in range(numBins):
         F.add_linear(
-            *toArgs([(items[i], (i, aBin)) for i in range(len(items))]
-                ,"<=", binSize)
+            *toArgs([(items[i], (i, aBin)) for i in range(len(items))], "<=", binSize)
         )
 
     return F
@@ -73,8 +72,8 @@ def BinPacking(numBins, binSize, items):
 class BinPackingHelper(object):
     """Command line helper for the Clique-coclique CNF"""
 
-    name='binpacking'
-    description= """
+    name = 'binpacking'
+    description = """
         In the bin packing problem, objects of different volumes must be packed
         into a finite number of bins or containers each of volume V into a fixed
         number of bins.
@@ -88,16 +87,15 @@ class BinPackingHelper(object):
         - `parser`: parser to load with options.
         """
         parser.description = BinPackingHelper.description
-        parser.add_argument('numBins',type=int,help="Number of Bins.")
-        parser.add_argument('binSize',type=int,help="Bin size.")
+        parser.add_argument('numBins', type=int, help="Number of Bins.")
+        parser.add_argument('binSize', type=int, help="Bin size.")
         parser.add_argument('item', metavar='size', type=int, nargs='*',
-            help='Each number adds an item of the given size.')
+                            help='Each number adds an item of the given size.')
         parser.add_argument(
             '-m', '--multiItem',
-            metavar=('itemCount','itemSize'),
+            metavar=('itemCount', 'itemSize'),
             help="Add itemCount items of size itemSize.",
             required=False, type=int, nargs=2, action='append')
-
 
     @staticmethod
     def build_cnf(args):

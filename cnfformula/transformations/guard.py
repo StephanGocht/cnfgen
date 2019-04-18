@@ -3,7 +3,7 @@
 
 import random
 
-from ..cmdline  import register_cnf_transformation_subcommand
+from ..cmdline import register_cnf_transformation_subcommand
 from ..transformations import register_cnf_transformation
 
 from ..cnf import CNF, disj, xor, less, greater, geq, leq
@@ -21,8 +21,8 @@ def Guard(cnf):
 
     """
 
-    out=CNF()
-    out._header="Guarded formula\n\n"+cnf._header
+    out = CNF()
+    out._header = "Guarded formula\n\n"+cnf._header
 
     for v in cnf.variables():
         out.add_variable(v)
@@ -50,8 +50,8 @@ def Guard(cnf):
 class GuardCmd:
     """Guard clauses
     """
-    name='guard'
-    description='Guard clauses with spoiler literals'
+    name = 'guard'
+    description = 'Guard clauses with spoiler literals'
 
     @staticmethod
     def setup_command_line(parser):

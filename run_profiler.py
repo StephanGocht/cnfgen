@@ -8,16 +8,18 @@ import os
 import sys
 from contextlib import contextmanager
 
+
 @contextmanager
 def erase_stdout():
 
-    with file(os.devnull,"w") as null:
+    with file(os.devnull, "w") as null:
         old_stdout = sys.stdout
         sys.stdout = null
 
         yield
-    
+
         sys.stdout = old_stdout
+
 
 def cnfgen_call():
 
@@ -30,13 +32,11 @@ def cnfgen_call():
 
 
 if __name__ == '__main__':
-    
-    from cProfile   import run as profile
+
+    from cProfile import run as profile
 
     if len(sys.argv) <= 1:
-        print("Usage: {} <cnfgen_args>".format(sys.argv[0]),file=sys.stderr)
+        print("Usage: {} <cnfgen_args>".format(sys.argv[0]), file=sys.stderr)
         sys.exit(-1)
 
-    profile('cnfgen_call()',sort='tottime')
-    
-    
+    profile('cnfgen_call()', sort='tottime')

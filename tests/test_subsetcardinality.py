@@ -14,7 +14,7 @@ class TestSubsetCardinality(TestCNFBase):
         G = CNF()
         graph = nx.Graph()
         F = SubsetCardinalityFormula(graph)
-        self.assertCnfEqual(F,G)
+        self.assertCnfEqual(F, G)
 
     def test_not_bipartite(self):
         graph = nx.complete_graph(3)
@@ -22,7 +22,7 @@ class TestSubsetCardinality(TestCNFBase):
             SubsetCardinalityFormula(graph)
 
     def test_complete_even(self):
-        graph = complete_bipartite_graph_proper(2,2)
+        graph = complete_bipartite_graph_proper(2, 2)
         F = SubsetCardinalityFormula(graph)
         dimacs = """\
         p cnf 4 4
@@ -31,10 +31,10 @@ class TestSubsetCardinality(TestCNFBase):
         -1 -3 0
         -2 -4 0
         """
-        self.assertCnfEqualsDimacs(F,dimacs)
+        self.assertCnfEqualsDimacs(F, dimacs)
 
     def test_complete_even_odd(self):
-        graph = complete_bipartite_graph_proper(2,3)
+        graph = complete_bipartite_graph_proper(2, 3)
         F = SubsetCardinalityFormula(graph)
         dimacs = """\
         p cnf 6 9
@@ -48,10 +48,10 @@ class TestSubsetCardinality(TestCNFBase):
         -2 -5 0
         -3 -6 0
         """
-        self.assertCnfEqualsDimacs(F,dimacs)
+        self.assertCnfEqualsDimacs(F, dimacs)
 
     def test_complete_odd(self):
-        graph = complete_bipartite_graph_proper(3,3)
+        graph = complete_bipartite_graph_proper(3, 3)
         F = SubsetCardinalityFormula(graph)
         dimacs = """\
         p cnf 9 18
@@ -74,17 +74,19 @@ class TestSubsetCardinality(TestCNFBase):
         -3 -9 0
         -6 -9 0
         """
-        self.assertCnfEqualsDimacs(F,dimacs)        
-        
+        self.assertCnfEqualsDimacs(F, dimacs)
+
+
 class TestSubsetCardinalityCommandline(TestCommandline):
     def test_complete(self):
-        for rows in range(2,5):
-            for columns in range(2,5):
-                parameters = ["cnfgen","-q","subsetcard", "--bcomplete", rows, columns]
+        for rows in range(2, 5):
+            for columns in range(2, 5):
+                parameters = ["cnfgen", "-q", "subsetcard",
+                              "--bcomplete", rows, columns]
                 graph = complete_bipartite_graph_proper(rows, columns)
                 F = SubsetCardinalityFormula(graph)
-                self.checkFormula(sys.stdin,F, parameters)
+                self.checkFormula(sys.stdin, F, parameters)
 
     def test_not_bipartite(self):
-        parameters = ["cnfgen","-q","subsetcard", "--complete", "3"]
+        parameters = ["cnfgen", "-q", "subsetcard", "--complete", "3"]
         self.checkCrash(sys.stdin, parameters)

@@ -5,7 +5,7 @@
 import random
 
 
-from ..cmdline  import register_cnf_transformation_subcommand
+from ..cmdline import register_cnf_transformation_subcommand
 from ..transformations import register_cnf_transformation
 
 from ..cnf import CNF, disj, xor, less, greater, geq, leq
@@ -19,9 +19,9 @@ def Expand(cnf):
     internal constraints are memorized as clauses.
 
     """
-    
+
     # empty cnf
-    out=CNF(header=cnf.header)
+    out = CNF(header=cnf.header)
 
     for v in cnf.variables():
         out.add_variable(v)
@@ -29,7 +29,7 @@ def Expand(cnf):
     out.mode_unchecked()
 
     out._constraints = list(cnf._compressed_clauses())
-    out._length  = len(out._constraints)
+    out._length = len(out._constraints)
 
     out._check_coherence()
     out.mode_default()
@@ -41,13 +41,13 @@ def Expand(cnf):
 class ExpandCmd:
     """Expand 
     """
-    name='expand'
-    description='Expand constraints into clauses'
+    name = 'expand'
+    description = 'Expand constraints into clauses'
 
     @staticmethod
     def setup_command_line(parser):
         pass
 
     @staticmethod
-    def transform_cnf(F,args):
+    def transform_cnf(F, args):
         return Expand(F)

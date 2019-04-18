@@ -17,20 +17,21 @@ https://github.com/MassimoLauria/cnfgen.git
 """
 
 
-
-from itertools import product,islice
-from itertools import combinations,combinations_with_replacement
+from itertools import product, islice
+from itertools import combinations, combinations_with_replacement
 from collections import Counter
 from collections import namedtuple
 
 import re
-from math import ceil,floor,log,factorial
+from math import ceil, floor, log, factorial
 
 from . import prjdata as pd
-from .graphs import bipartite_sets,neighbors
+from .graphs import bipartite_sets, neighbors
+
 
 class DuplicateVariable(RuntimeWarning):
     pass
+
 
 class CNF(object):
     """Propositional formulas in conjunctive normal form.
@@ -88,30 +89,28 @@ class CNF(object):
 
         # Internal documentation of the formula
         self._header = header or \
-                       "Generated with `cnfgen`\n(C) {}\n{}\n\n".format(
-                           pd.__copyright__,
-                           pd.__url__)
+            "Generated with `cnfgen`\n(C) {}\n{}\n\n".format(
+                pd.__copyright__,
+                pd.__url__)
 
         # Initial empty formula
-        self._length          = 0
-        self._constraints     = []
+        self._length = 0
+        self._constraints = []
 
         # Variable indexes <--> Variable names correspondence
         # first variable is indexed with 1.
-        self._index2name      = [None]
-        self._name2index      = dict()
-        self._name2descr      = dict()
-
+        self._index2name = [None]
+        self._name2index = dict()
+        self._name2descr = dict()
 
         # How strict is the addition of constraints
-        self._allow_literal_repetitions=False
-        self._allow_opposite_literals=False
-        self._auto_add_variables=True
+        self._allow_literal_repetitions = False
+        self._allow_opposite_literals = False
+        self._auto_add_variables = True
 
         # Load the initial data into the CNF
         for c in clauses or []:
             self.add_clause(c)
-
 
     @property
     def header(self):
@@ -138,9 +137,9 @@ class CNF(object):
 
         """
         self.allow_literal_repetitions = False
-        self.allow_opposite_literals   = False
-        self.auto_add_variables        = False
-        self.allow_readd_variables     = False
+        self.allow_opposite_literals = False
+        self.auto_add_variables = False
+        self.allow_readd_variables = False
 
     def mode_unchecked(self):
         """Constraints are added with no rule
@@ -153,9 +152,9 @@ class CNF(object):
 
         """
         self.allow_literal_repetitions = True
-        self.allow_opposite_literals   = True
-        self.auto_add_variables        = True
-        self.allow_readd_variables     = True
+        self.allow_opposite_literals = True
+        self.auto_add_variables = True
+        self.allow_readd_variables = True
 
     def mode_default(self):
         """Constraint are added with default rules
@@ -169,10 +168,10 @@ class CNF(object):
           - :py:meth:`CNF.auto_add_variables`
 
         """
-        self.allow_literal_repetitions   = False
-        self.allow_opposite_literals     = False
-        self.auto_add_variables          = True
-        self.allow_readd_variables       = False
+        self.allow_literal_repetitions = False
+        self.allow_opposite_literals = False
+        self.auto_add_variables = True
+        self.allow_readd_variables = False
 
     @property
     def allow_literal_repetitions(self):
@@ -185,7 +184,7 @@ class CNF(object):
         return self._allow_literal_repetitions
 
     @allow_literal_repetitions.setter
-    def allow_literal_repetitions(self,value):
+    def allow_literal_repetitions(self, value):
         self._allow_literal_repetitions = bool(value)
         if self._auto_add_variables and \
            self._allow_literal_repetitions and \
@@ -205,7 +204,7 @@ class CNF(object):
         return self._allow_opposite_literals
 
     @allow_opposite_literals.setter
-    def allow_opposite_literals(self,value):
+    def allow_opposite_literals(self, value):
         self._allow_opposite_literals = bool(value)
         if self._auto_add_variables and \
            self._allow_literal_repetitions and \
@@ -226,7 +225,7 @@ class CNF(object):
         return self._auto_add_variables
 
     @auto_add_variables.setter
-    def auto_add_variables(self,value):
+    def auto_add_variables(self, value):
         self._auto_add_variables = bool(value)
         if self._auto_add_variables and \
            self._allow_literal_repetitions and \
@@ -243,7 +242,7 @@ class CNF(object):
         return self._allow_readd_variables
 
     @allow_readd_variables.setter
-    def allow_readd_variables(self,value):
+    def allow_readd_variables(self, value):
         self._allow_readd_variables = value
 
     #
@@ -284,10 +283,10 @@ class CNF(object):
 
         return self._length
 
-
     #
     # Internal implementation methods, use at your own risk!
     #
+
     def _uncompress_literals(self, literals):
         """(INTERNAL USE) Uncompress a clause from the numeric representation.
 
@@ -306,7 +305,7 @@ class CNF(object):
         >>> print(c._uncompress_literals([-1,-2]))
         [(False, 'x'), (False, 'y')]
         """
-        return [ (l>0, self._index2name[abs(l)]) for l in literals ]
+        return [(l > 0, self._index2name[abs(l)]) for l in literals]
 
     def _check_and_compress_literals(self, literals):
         """Convert a list of literals to its numeric representation.
@@ -359,26 +358,30 @@ class CNF(object):
         try:
             hash(tuple(literals))
         except TypeError:
-            raise TypeError("%s is not a well formatted sequence of literals" %literals)
+            raise TypeError(
+                "%s is not a well formatted sequence of literals" % literals)
 
         # Check literal repetitions
         if (not self.allow_literal_repetitions) and len(set(literals)) != len(literals):
-            raise ValueError("Forbidden repeated literals in the constraint {}".format(literals))
+            raise ValueError(
+                "Forbidden repeated literals in the constraint {}".format(literals))
 
         # Check opposite literals
         if not self.allow_opposite_literals:
-            positive     = set([v for (p,v) in literals if p ])
-            negative     = set([v for (p,v) in literals if not p ])
-            if len(positive & negative)>0:
+            positive = set([v for (p, v) in literals if p])
+            negative = set([v for (p, v) in literals if not p])
+            if len(positive & negative) > 0:
                 emsg = "{ " + ", ".join(positive & negative) + " }"
-                raise ValueError("Following variable occur with opposite literals: {}".format(emsg))
+                raise ValueError(
+                    "Following variable occur with opposite literals: {}".format(emsg))
 
         # Add the compressed clause
         try:
             return tuple((1 if p else -1) * self._name2index[n] for p, n in literals)
         except KeyError as error:
             if not self.auto_add_variables:
-                raise ValueError("The clause contains unknown variable: {}".format(error))
+                raise ValueError(
+                    "The clause contains unknown variable: {}".format(error))
             else:
                 for _, var in literals:
                     if var not in self._name2index:
@@ -395,7 +398,7 @@ class CNF(object):
         return tuple((1 if p else -1) * self._name2index[n] for p, n in literals)
 
     # By default we start with the safe version
-    _check_and_compress_literals_safe  = _check_and_compress_literals
+    _check_and_compress_literals_safe = _check_and_compress_literals
 
     def _add_compressed_constraints(self, constraints):
         """(INTERNAL USE) Add a list of compressed constraints.
@@ -459,7 +462,6 @@ class CNF(object):
             self._length += sum(c.n_clauses() for c in constraints)
         self._constraints.extend(constraints)
 
-
     def _check_coherence(self):
         """Check if the formula is internally consistent.
 
@@ -478,26 +480,25 @@ class CNF(object):
         >>> c._check_coherence()
         False
         """
-        varindex=self._name2index
-        varnames=self._index2name
+        varindex = self._name2index
+        varnames = self._index2name
 
         # number of variables and clauses
-        N=len(list(varindex.keys()))
+        N = len(list(varindex.keys()))
 
         # Consistency in the variable dictionary
         if N != len(varnames)-1:
             return False
 
-        for i in range(1,N+1):
-            if varindex[varnames[i]]!=i:
+        for i in range(1, N+1):
+            if varindex[varnames[i]] != i:
                 return False
-
 
         # Count clauses and check literal representation
         est_length = 0
         for cnst in self._constraints:
             if type(cnst) in (weighted_eq, weighted_geq):
-                for weight,lit in cnst:
+                for weight, lit in cnst:
                     if not 0 < abs(lit) <= N:
                         return False
             else:
@@ -512,11 +513,10 @@ class CNF(object):
         # formula passed all tests
         return True
 
-
     #
     # High level API
     #
-    def add_variable(self,var,description=None):
+    def add_variable(self, var, description=None):
         """Add a variable to the formula (if not already resent).
 
         The variable must be `hashable`. I.e. it must be usable as key
@@ -540,14 +540,13 @@ class CNF(object):
                 raise DuplicateVariable(
                     "Tried to add duplicate of variable %s" % str(var))
         except TypeError:
-            raise TypeError("%s is not a legal variable name" %var)
+            raise TypeError("%s is not a legal variable name" % var)
 
         # update description
         if description is not None:
             self._name2descr[var] = description
 
-
-    def add_clause(self,clause):
+    def add_clause(self, clause):
         """Add a clause to the CNF.
 
         E.g. (not x3) or x4 or (not x2) is encoded as
@@ -604,10 +603,10 @@ class CNF(object):
         TypeError
             the sequence of literals is not made by pairs of immutable objects.
         """
-        self._constraints.append( disj(*self._check_and_compress_literals(clause)))
+        self._constraints.append(
+            disj(*self._check_and_compress_literals(clause)))
         if self._length is not None:
             self._length += 1
-
 
     def variables(self):
         """Returns (a copy of) the list of variable names.
@@ -615,7 +614,6 @@ class CNF(object):
         vars_iterator = iter(self._index2name)
         next(vars_iterator)
         return vars_iterator
-
 
     def is_satisfiable(self, cmd=None, sameas=None, verbose=0):
         """Determines whether a CNF is satisfiable or not.
@@ -763,7 +761,6 @@ class CNF(object):
                 for line in extra_text.split("\n"):
                     output.write(("c "+line).rstrip()+"\n")
 
-
         # Formula specification
         output.write("p cnf {0} {1}".format(n, m))
 
@@ -792,12 +789,11 @@ class CNF(object):
                 for line in extra_text.split("\n"):
                     output.write(("c "+line).rstrip()+"\n")
 
-
         # Formula specification
         output.write("p wcnf {0} {1} {2}\n".format(n, m, top))
 
         # Opt
-        for var in range(1,n+1):
+        for var in range(1, n+1):
             output.write("1 {} 0\n".format(var))
 
         # Clauses
@@ -856,16 +852,16 @@ class CNF(object):
         output = StringIO()
 
         # count the constraints (can't encode xor in OPB directly)
-        nvariables   = len(self._index2name)-1
+        nvariables = len(self._index2name)-1
         nconstraints = 0
         for c in self._constraints:
-            if type(c)==xor:
+            if type(c) == xor:
                 nconstraints += c.n_clauses()
             else:
                 nconstraints += 1
 
         output.write("* #variable= {} #constraint= {}\n*\n".format(
-            nvariables,nconstraints))
+            nvariables, nconstraints))
 
         # A nice header
         if export_header:
@@ -877,56 +873,62 @@ class CNF(object):
                     output.write(("* "+line).rstrip()+"\n")
 
         if opt:
-            output.write("min: " + " ".join(["-1 x{}".format(i+1) for i in range(nvariables)])+" ;\n")
+            output.write(
+                "min: " + " ".join(["-1 x{}".format(i+1) for i in range(nvariables)])+" ;\n")
 
-        def _print_lit_ineq(lits,sign, thr):
+        def _print_lit_ineq(lits, sign, thr):
 
-            lhs = " ".join( "{}1 x{}".format("+" if l >= 0 else "-",abs(l)) for l in lits)
-            rhs = str(thr - len([i for i in lits if i<0]))
+            lhs = " ".join("{}1 x{}".format(
+                "+" if l >= 0 else "-", abs(l)) for l in lits)
+            rhs = str(thr - len([i for i in lits if i < 0]))
             output.write(lhs + " " + sign + " " + rhs + ";\n")
 
         def _print_lin_ineq(cnst):
 
-            lhs = " ".join( "{:+} x{}".format(w,v) for w,v in cnst)
-            if type(cnst)==weighted_eq:
+            lhs = " ".join("{:+} x{}".format(w, v) for w, v in cnst)
+            if type(cnst) == weighted_eq:
                 rhs = str(cnst.value)
-                op  = "="
-            elif type(cnst)==weighted_geq:
+                op = "="
+            elif type(cnst) == weighted_geq:
                 rhs = str(cnst.threshold)
-                op  = ">="
+                op = ">="
             else:
-                raise RuntimeError("[Internal Error] Unknown type of constraints found: {}".format(type(cnst)))
+                raise RuntimeError(
+                    "[Internal Error] Unknown type of constraints found: {}".format(type(cnst)))
             output.write(lhs + " " + op + " " + rhs + ";\n")
 
         # Normalize inequalities
         for cnst in self._constraints:
 
             # Representation clause by clause
-            if type(cnst) in [disj,xor]:
+            if type(cnst) in [disj, xor]:
                 for cls in cnst.clauses():
-                    _print_lit_ineq(cls,">=",1)
+                    _print_lit_ineq(cls, ">=", 1)
 
             # Representation by equation
-            elif type(cnst)==eq:
-                _print_lit_ineq(cnst,"=",cnst.value)
+            elif type(cnst) == eq:
+                _print_lit_ineq(cnst, "=", cnst.value)
 
             # Representation by inequality
-            elif type(cnst)==geq:
-                _print_lit_ineq(cnst,">=",cnst.threshold)
+            elif type(cnst) == geq:
+                _print_lit_ineq(cnst, ">=", cnst.threshold)
 
-            elif type(cnst)==greater:
-                _print_lit_ineq(cnst,">=",cnst.threshold+1)
+            elif type(cnst) == greater:
+                _print_lit_ineq(cnst, ">=", cnst.threshold+1)
 
-            elif type(cnst)==leq:
-                _print_lit_ineq([-l for l in cnst],">=", len(cnst) - cnst.threshold)
+            elif type(cnst) == leq:
+                _print_lit_ineq([-l for l in cnst], ">=",
+                                len(cnst) - cnst.threshold)
 
-            elif type(cnst)==less:
-                _print_lit_ineq([-l for l in cnst],">=", len(cnst) - cnst.threshold + 1)
+            elif type(cnst) == less:
+                _print_lit_ineq([-l for l in cnst], ">=",
+                                len(cnst) - cnst.threshold + 1)
 
-            elif type(cnst) in [weighted_eq,weighted_geq]:
+            elif type(cnst) in [weighted_eq, weighted_geq]:
                 _print_lin_ineq(cnst)
             else:
-                raise RuntimeError("[Internal Error] Unknown type of constraints found: {}".format(type(cnst)))
+                raise RuntimeError(
+                    "[Internal Error] Unknown type of constraints found: {}".format(type(cnst)))
 
         return output.getvalue()
 
@@ -942,57 +944,63 @@ class CNF(object):
             output.write("x = p.new_variable(binary=True)\n")
 
         if opt:
-            nvariables   = len(self._index2name)-1
-            output.write("p.set_objective(" + " + ".join(["x[{}]".format(i+1) for i in range(nvariables)])+")\n")
+            nvariables = len(self._index2name)-1
+            output.write(
+                "p.set_objective(" + " + ".join(["x[{}]".format(i+1) for i in range(nvariables)])+")\n")
 
-        def _print_lit_ineq(lits,sign, thr):
+        def _print_lit_ineq(lits, sign, thr):
             output.write("p.add_constraint(")
-            lhs = " + ".join( "{}*x[{}]".format(1 if l >= 0 else -1,abs(l)) for l in lits)
-            rhs = str(thr - len([i for i in lits if i<0]))
+            lhs = " + ".join("{}*x[{}]".format(1 if l >=
+                                               0 else -1, abs(l)) for l in lits)
+            rhs = str(thr - len([i for i in lits if i < 0]))
             output.write(lhs + " " + sign + " " + rhs + ")\n")
 
         def _print_lin_ineq(cnst):
             output.write("p.add_constraint(")
-            lhs = " + ".join( "{}*x[{}]".format(w,v) for w,v in cnst)
-            if type(cnst)==weighted_eq:
+            lhs = " + ".join("{}*x[{}]".format(w, v) for w, v in cnst)
+            if type(cnst) == weighted_eq:
                 rhs = str(cnst.value)
-                op  = "=="
-            elif type(cnst)==weighted_geq:
+                op = "=="
+            elif type(cnst) == weighted_geq:
                 rhs = str(cnst.threshold)
-                op  = ">="
+                op = ">="
             else:
-                raise RuntimeError("[Internal Error] Unknown type of constraints found: {}".format(type(cnst)))
+                raise RuntimeError(
+                    "[Internal Error] Unknown type of constraints found: {}".format(type(cnst)))
             output.write(lhs + " " + op + " " + rhs + ")\n")
 
         # Normalize inequalities
         for cnst in self._constraints:
 
             # Representation clause by clause
-            if type(cnst) in [disj,xor]:
+            if type(cnst) in [disj, xor]:
                 for cls in cnst.clauses():
-                    _print_lit_ineq(cls,">=",1)
+                    _print_lit_ineq(cls, ">=", 1)
 
             # Representation by equation
-            elif type(cnst)==eq:
-                _print_lit_ineq(cnst,"==",cnst.value)
+            elif type(cnst) == eq:
+                _print_lit_ineq(cnst, "==", cnst.value)
 
             # Representation by inequality
-            elif type(cnst)==geq:
-                _print_lit_ineq(cnst,">=",cnst.threshold)
+            elif type(cnst) == geq:
+                _print_lit_ineq(cnst, ">=", cnst.threshold)
 
-            elif type(cnst)==greater:
-                _print_lit_ineq(cnst,">=",cnst.threshold+1)
+            elif type(cnst) == greater:
+                _print_lit_ineq(cnst, ">=", cnst.threshold+1)
 
-            elif type(cnst)==leq:
-                _print_lit_ineq([-l for l in cnst],">=", len(cnst) - cnst.threshold)
+            elif type(cnst) == leq:
+                _print_lit_ineq([-l for l in cnst], ">=",
+                                len(cnst) - cnst.threshold)
 
-            elif type(cnst)==less:
-                _print_lit_ineq([-l for l in cnst],">=", len(cnst) - cnst.threshold + 1)
+            elif type(cnst) == less:
+                _print_lit_ineq([-l for l in cnst], ">=",
+                                len(cnst) - cnst.threshold + 1)
 
-            elif type(cnst) in [weighted_eq,weighted_geq]:
+            elif type(cnst) in [weighted_eq, weighted_geq]:
                 _print_lin_ineq(cnst)
             else:
-                raise RuntimeError("[Internal Error] Unknown type of constraints found: {}".format(type(cnst)))
+                raise RuntimeError(
+                    "[Internal Error] Unknown type of constraints found: {}".format(type(cnst)))
 
 #        output.write("p.show()\n")
         output.write("import sys\n")
@@ -1054,7 +1062,7 @@ class CNF(object):
         """
         clauses_per_page = 40
 
-        latex_preamble=r"""%
+        latex_preamble = r"""%
 \documentclass[10pt,a4paper]{article}
 \usepackage[margin=1in]{geometry}
 \usepackage{amsmath}
@@ -1067,14 +1075,14 @@ class CNF(object):
         # formula header as a LaTeX comment
         if export_header:
             for s in self.header.split("\n")[:-1]:
-                output.write( ("% "+s).rstrip()+"\n" )
+                output.write(("% "+s).rstrip()+"\n")
 
         # document opening
         if full_document:
             output.write(latex_preamble)
             output.write("\\begin{document}\n")
-            title=self.header.split('\n')[0]
-            title=title.replace("_","\_")
+            title = self.header.split('\n')[0]
+            title = title.replace("_", "\_")
             output.write("\\title{{{}}}\n".format(title))
             output.write("\\author{CNFgen formula generator}\n")
             output.write("\\maketitle\n")
@@ -1089,17 +1097,17 @@ class CNF(object):
 
         def map_literals(l):
             """Map literals to LaTeX string"""
-            assert l!=0
-            if l>0 :
-                return  "           {"+str(self._index2name[l])+"}"
+            assert l != 0
+            if l > 0:
+                return "           {"+str(self._index2name[l])+"}"
             else:
                 name = self._index2name[-l]
-                split_point=name.find("_")
+                split_point = name.find("_")
                 return "{\\overline{"+name[:split_point]+"}"+name[split_point:]+"}"
 
-        def write_clause(cls, first,full_document):
+        def write_clause(cls, first, full_document):
             """Write the clause in LaTeX."""
-            output.write("\n&" if first  else " \\\\\n&")
+            output.write("\n&" if first else " \\\\\n&")
             output.write("       " if full_document or first else " \\land ")
 
             # build the latex clause
@@ -1108,28 +1116,28 @@ class CNF(object):
             elif full_document:
                 output.write(" \\lor ".join(map_literals(l) for l in cls))
             else:
-                output.write("\\left( " + \
-                             " \\lor ".join(map_literals(l) for l in cls) + \
+                output.write("\\left( " +
+                             " \\lor ".join(map_literals(l) for l in cls) +
                              " \\right)")
 
         # Output the clauses
         clauses_number = len(self)
         if full_document:
-            output.write("\\noindent\\textbf{{CNF with {} variables and and {} clauses:}}\n".\
-                         format(len(self._name2index),clauses_number))
+            output.write("\\noindent\\textbf{{CNF with {} variables and and {} clauses:}}\n".
+                         format(len(self._name2index), clauses_number))
 
         output.write("\\begin{align}")
 
-        if clauses_number==0:
+        if clauses_number == 0:
             output.write("\n   \\top")
         else:
-            for i,clause in enumerate(self._compressed_clauses()):
-                if i% clauses_per_page ==0 and i!=0 and full_document:
+            for i, clause in enumerate(self._compressed_clauses()):
+                if i % clauses_per_page == 0 and i != 0 and full_document:
                     output.write("\n\\end{align}\\pagebreak")
                     output.write("\n\\begin{align}")
-                    write_clause(clause, True,full_document)
+                    write_clause(clause, True, full_document)
                 else:
-                    write_clause(clause, i==0,full_document)
+                    write_clause(clause, i == 0, full_document)
 
         output.write("\n\\end{align}")
 
@@ -1142,7 +1150,7 @@ class CNF(object):
     #
     # Various utility function for CNFs
     #
-    def add_parity(self,variables, constant):
+    def add_parity(self, variables, constant):
         """Output the CNF encoding of a parity constraint
 
         E.g. X1 + X2 + X3 = 1 (mod 2) is encoded as
@@ -1178,14 +1186,14 @@ class CNF(object):
         >>> list(F)
         [[(False, 'a')]]
         """
-        literals = [(True,v) for v in variables]
-        parity = xor(*self._check_and_compress_literals(literals),value=constant)
+        literals = [(True, v) for v in variables]
+        parity = xor(*self._check_and_compress_literals(literals),
+                     value=constant)
         self._constraints.append(parity)
         if self._length is not None:
             self._length += parity.n_clauses()
 
-
-    def add_strictly_less_than(self,variables, threshold):
+    def add_strictly_less_than(self, variables, threshold):
         """Clauses encoding a \"strictly less than\" constraint
 
         E.g. X1 + X2 + X3 + X4 < 3
@@ -1225,14 +1233,14 @@ class CNF(object):
         >>> list(F)
         []
         """
-        literals = [(True,v) for v in variables]
-        ineq = less(*self._check_and_compress_literals(literals),threshold=threshold)
+        literals = [(True, v) for v in variables]
+        ineq = less(*self._check_and_compress_literals(literals),
+                    threshold=threshold)
         self._constraints.append(ineq)
         if self._length is not None:
             self._length += ineq.n_clauses()
 
-
-    def add_less_or_equal(self,variables, threshold):
+    def add_less_or_equal(self, variables, threshold):
         """Clauses encoding a \"less than or equal to\" constraint
 
         E.g. X1 + X2 + X3 + X4 <= 2
@@ -1278,12 +1286,12 @@ class CNF(object):
         >>> list(F)
         []
         """
-        literals = [(True,v) for v in variables]
-        ineq = leq(*self._check_and_compress_literals(literals),threshold=threshold)
+        literals = [(True, v) for v in variables]
+        ineq = leq(*self._check_and_compress_literals(literals),
+                   threshold=threshold)
         self._constraints.append(ineq)
         if self._length is not None:
             self._length += ineq.n_clauses()
-
 
     def add_strictly_greater_than(self, variables, threshold):
         """Clauses encoding a \"strictly greater than\" constraint
@@ -1325,12 +1333,12 @@ class CNF(object):
         >>> list(F)
         [[]]
         """
-        literals = [(True,v) for v in variables]
-        ineq = greater(*self._check_and_compress_literals(literals),threshold=threshold)
+        literals = [(True, v) for v in variables]
+        ineq = greater(
+            *self._check_and_compress_literals(literals), threshold=threshold)
         self._constraints.append(ineq)
         if self._length is not None:
             self._length += ineq.n_clauses()
-
 
     def add_greater_or_equal(self, variables, threshold):
         """Clauses encoding a \"greater than or equal to\" constraint
@@ -1374,12 +1382,12 @@ class CNF(object):
         >>> list(F)
         [[]]
         """
-        literals = [(True,v) for v in variables]
-        ineq = geq(*self._check_and_compress_literals(literals),threshold=threshold)
+        literals = [(True, v) for v in variables]
+        ineq = geq(*self._check_and_compress_literals(literals),
+                   threshold=threshold)
         self._constraints.append(ineq)
         if self._length is not None:
             self._length += ineq.n_clauses()
-
 
     def add_equal_to(self, variables, value):
         """Clauses encoding a \"equal to\" constraint
@@ -1402,8 +1410,8 @@ class CNF(object):
            target values
             a list of clauses
         """
-        literals = [(True,v) for v in variables]
-        equ = eq(*self._check_and_compress_literals(literals),value=value)
+        literals = [(True, v) for v in variables]
+        equ = eq(*self._check_and_compress_literals(literals), value=value)
         self._constraints.append(equ)
         self._length += equ.n_clauses()
 
@@ -1429,7 +1437,6 @@ class CNF(object):
         threshold = len(variables)//2
         return self.add_less_or_equal(variables, threshold)
 
-
     def add_exactly_half_ceil(self, variables):
         """Clauses encoding a \"exactly half\" constraint (rounded up)
 
@@ -1439,7 +1446,7 @@ class CNF(object):
            variables in the constraint
         """
         threshold = ceil(len(variables)/2)
-        return self.add_equal_to(variables,threshold)
+        return self.add_equal_to(variables, threshold)
 
     def add_exactly_half_floor(self, variables):
         """Clauses encoding a \"exactly half\" constraint (rounded down)
@@ -1450,8 +1457,7 @@ class CNF(object):
            variables in the constraint
         """
         threshold = floor(len(variables)/2)
-        return self.add_equal_to(variables,threshold)
-
+        return self.add_equal_to(variables, threshold)
 
     def add_linear(self, *args):
         """Add clauses encoding an integer linear constraint
@@ -1511,38 +1517,44 @@ class CNF(object):
             See above.
 
         """
-        if len(args)<2:
-            raise ValueError("Linear constraints require at least 2 args: comparison operator and value.")
-        variables = [(True,v) for v in args[1:-2:2]]
-        weights   = args[ :-2:2]
-        value     = args[-1]
-        op        = args[-2]
+        if len(args) < 2:
+            raise ValueError(
+                "Linear constraints require at least 2 args: comparison operator and value.")
+        variables = [(True, v) for v in args[1:-2:2]]
+        weights = args[:-2:2]
+        value = args[-1]
+        op = args[-2]
 
         variables = self._check_and_compress_literals(variables)
-        cnst=None
+        cnst = None
 
         if op == '==':
 
-            cnst = weighted_eq(*list(zip(weights,variables)),value=value)
+            cnst = weighted_eq(*list(zip(weights, variables)), value=value)
 
         elif op == '>=':
 
-            cnst = weighted_geq(*list(zip(weights,variables)),threshold=value)
+            cnst = weighted_geq(
+                *list(zip(weights, variables)), threshold=value)
 
         elif op == '>':
 
-            cnst = weighted_geq(*list(zip(weights,variables)),threshold=value+1)
+            cnst = weighted_geq(
+                *list(zip(weights, variables)), threshold=value+1)
 
         elif op == '<=':
 
-            cnst = weighted_geq(*list(zip((-w for w in weights),variables)),threshold= - value)
+            cnst = weighted_geq(
+                *list(zip((-w for w in weights), variables)), threshold=- value)
 
         elif op == '<':
 
-            cnst = weighted_geq(*list(zip((-w for w in weights),variables)),threshold= - value + 1)
+            cnst = weighted_geq(
+                *list(zip((-w for w in weights), variables)), threshold=- value + 1)
 
         else:
-            raise ValueError("Comparison operator must be among ==, >=, <=, >, <.")
+            raise ValueError(
+                "Comparison operator must be among ==, >=, <=, >, <.")
 
         self._constraints.append(cnst)
         # Too expensive to count the number of generated clause. Invalidate the estimate.
@@ -1553,22 +1565,22 @@ class unary_mapping(object):
     """Unary CNF representation of a mapping between two sets."""
 
     Domain = None
-    Range  = None
+    Range = None
 
     Pattern = None
 
-    Complete      = False
-    Functional    = False
-    Surjective    = False
-    Injective     = False
+    Complete = False
+    Functional = False
+    Surjective = False
+    Injective = False
 
     NonDecreasing = False
 
     @staticmethod
-    def var_name(i,b):
-        return "X_{{{0},{1}}}".format(i,b)
+    def var_name(i, b):
+        return "X_{{{0},{1}}}".format(i, b)
 
-    def __init__(self, D, R,**kwargs):
+    def __init__(self, D, R, **kwargs):
         r"""Generator for the clauses of a mapping between to sets
 
         This generates of the constraints on variables :math:`v(i,j)`
@@ -1613,13 +1625,13 @@ class unary_mapping(object):
 
         """
         self.Domain = list(D)
-        self.Range  = list(R)
+        self.Range = list(R)
 
         # optional parameters of the mapping
-        self.Complete      = kwargs.pop('complete',  True)
-        self.Functional    = kwargs.pop('functional',False)
-        self.Surjective    = kwargs.pop('surjective',False)
-        self.Injective     = kwargs.pop('injective', False)
+        self.Complete = kwargs.pop('complete',  True)
+        self.Functional = kwargs.pop('functional', False)
+        self.Surjective = kwargs.pop('surjective', False)
+        self.Injective = kwargs.pop('injective', False)
 
         self.NonDecreasing = kwargs.pop('nondecreasing', False)
 
@@ -1627,46 +1639,47 @@ class unary_mapping(object):
         self.var_name = kwargs.pop('var_name', self.var_name)
 
         # use a bipartite graph scheme for the mapping?
-        self.Pattern  = kwargs.pop('sparsity_pattern', None)
+        self.Pattern = kwargs.pop('sparsity_pattern', None)
 
         if kwargs:
             raise TypeError('Unexpected **kwargs: %r' % kwargs)
 
-        self.DomainToVertex={}
-        self.VertexToDomain={}
-        self.RangeToVertex={}
-        self.VertexToRange={}
+        self.DomainToVertex = {}
+        self.VertexToDomain = {}
+        self.RangeToVertex = {}
+        self.VertexToRange = {}
 
-        self.RankRange  = {}
+        self.RankRange = {}
         self.RankDomain = {}
 
         if self.Pattern is not None:
 
-            gL,gR = bipartite_sets(self.Pattern)
+            gL, gR = bipartite_sets(self.Pattern)
 
             if len(gL) != len(self.Domain):
-                raise ValueError("Domain and the left side of the pattern differ in size")
+                raise ValueError(
+                    "Domain and the left side of the pattern differ in size")
 
             if len(gR) != len(self.Range):
-                raise ValueError("Range and the right side of the pattern differ in size")
+                raise ValueError(
+                    "Range and the right side of the pattern differ in size")
         else:
             gL = self.Domain
             gR = self.Range
 
-        for (d,v) in zip(self.Domain,gL):
-            self.DomainToVertex[d]=v
-            self.VertexToDomain[v]=d
+        for (d, v) in zip(self.Domain, gL):
+            self.DomainToVertex[d] = v
+            self.VertexToDomain[v] = d
 
-        for (r,v) in zip(self.Range,gR):
-            self.RangeToVertex[r]=v
-            self.VertexToRange[v]=r
+        for (r, v) in zip(self.Range, gR):
+            self.RangeToVertex[r] = v
+            self.VertexToRange[v] = r
 
-        for i,d in enumerate(self.Domain,start=1):
-            self.RankDomain[d]=i
+        for i, d in enumerate(self.Domain, start=1):
+            self.RankDomain[d] = i
 
-        for i,r in enumerate(self.Range,start=1):
-            self.RankRange[r]=i
-
+        for i, r in enumerate(self.Range, start=1):
+            self.RankRange[r] = i
 
     def domain(self):
         return self.Domain
@@ -1674,60 +1687,65 @@ class unary_mapping(object):
     def range(self):
         return self.Range
 
-    def images(self,d):
+    def images(self, d):
         if self.Pattern is None:
             return self.Range
         else:
             v = self.DomainToVertex[d]
-            return [ self.VertexToRange[u] for u in neighbors(self.Pattern,v) ]
+            return [self.VertexToRange[u] for u in neighbors(self.Pattern, v)]
 
-    def counterimages(self,r):
+    def counterimages(self, r):
         if self.Pattern is None:
             return self.Domain
         else:
             v = self.RangeToVertex[r]
-            return [ self.VertexToDomain[u] for u in neighbors(self.Pattern,v) ]
+            return [self.VertexToDomain[u] for u in neighbors(self.Pattern, v)]
 
     def variables(self):
         for d in self.Domain:
             for r in self.images(d):
-                yield self.var_name(d,r)
+                yield self.var_name(d, r)
 
-    def load_variables_to_formula(self,F):
+    def load_variables_to_formula(self, F):
         """Loads the variables of the mapping into a CNF formula"""
         for v in self.variables():
             F.add_variable(v)
 
-    def load_clauses_to_formula(self,F):
+    def load_clauses_to_formula(self, F):
         """Loads the clauses of the mapping into a CNF formula"""
         # Completeness axioms
         if self.Complete:
             for d in self.Domain:
-                F.add_greater_or_equal([self.var_name(d,r) for r in self.images(d)], 1)
+                F.add_greater_or_equal([self.var_name(d, r)
+                                        for r in self.images(d)], 1)
 
         # Surjectivity axioms
         if self.Surjective:
             for r in self.Range:
-                F.add_greater_or_equal([self.var_name(d,r) for d in self.counterimages(r)], 1)
+                F.add_greater_or_equal([self.var_name(d, r)
+                                        for d in self.counterimages(r)], 1)
 
         # Injectivity axioms
         if self.Injective:
             for r in self.Range:
-                F.add_less_or_equal([self.var_name(d,r)  for d in self.counterimages(r)],1)
+                F.add_less_or_equal([self.var_name(d, r)
+                                     for d in self.counterimages(r)], 1)
 
         # Functionality axioms
         if self.Functional:
             for d in self.Domain:
-                F.add_less_or_equal([self.var_name(d,r) for r in self.images(d)],1)
+                F.add_less_or_equal([self.var_name(d, r)
+                                     for r in self.images(d)], 1)
 
         # Mapping is monotone non-decreasing
         if self.NonDecreasing:
 
-            for (a,b) in combinations(self.Domain,2):
-                for (i,j) in product(self.images(a),self.images(b)):
+            for (a, b) in combinations(self.Domain, 2):
+                for (i, j) in product(self.images(a), self.images(b)):
 
                     if self.RankRange[i] > self.RankRange[j]:
-                        F.add_clause([(False,self.var_name(a,i)),(False,self.var_name(b,j))])
+                        F.add_clause([(False, self.var_name(a, i)),
+                                      (False, self.var_name(b, j))])
 
     def clauses(self):
         temp = CNF()
@@ -1742,26 +1760,24 @@ class binary_mapping(object):
     """Binary CNF representation of a mapping between two sets."""
 
     Domain = None
-    Range  = None
-    Bits   = None
+    Range = None
+    Bits = None
 
-    Injective     = False
+    Injective = False
     NonDecreasing = False
 
     @staticmethod
-    def var_name(i,b):
-        return "Y_{{{0},{1}}}".format(i,b)
-
+    def var_name(i, b):
+        return "Y_{{{0},{1}}}".format(i, b)
 
     def variables(self):
-        for v,b in product(self.Domain,range(0,self.Bits)):
-            yield self.var_name(v,b)
+        for v, b in product(self.Domain, range(0, self.Bits)):
+            yield self.var_name(v, b)
 
-    def load_variables_to_formula(self,F):
+    def load_variables_to_formula(self, F):
         """Loads the variables of the mapping into a CNF formula"""
         for v in self.variables():
             F.add_variable(v)
-
 
     def __init__(self, D, R, **kwargs):
         r"""Generator for the clauses of a binary mapping between D and :math:`R`
@@ -1792,11 +1808,11 @@ class binary_mapping(object):
 
         """
         self.Domain = list(D)
-        self.Range  = list(R)
-        self.Bits   = int(ceil(log(len(R),2)))
+        self.Range = list(R)
+        self.Bits = int(ceil(log(len(R), 2)))
 
         # optional parameters of the mapping
-        self.Injective     = kwargs.pop('injective', False)
+        self.Injective = kwargs.pop('injective', False)
         self.NonDecreasing = kwargs.pop('nondecreasing', False)
         # variable name scheme
         self.var_name = kwargs.pop('var_name', self.var_name)
@@ -1804,52 +1820,52 @@ class binary_mapping(object):
         if kwargs:
             raise TypeError('Unexpected **kwargs: %r' % kwargs)
 
-        self.ImageToBits={}
-        self.BitsToImage={}
+        self.ImageToBits = {}
+        self.BitsToImage = {}
 
-        for i,bs in islice(enumerate(product([0,1],repeat=self.Bits)),
-                           len(self.Range)):
+        for i, bs in islice(enumerate(product([0, 1], repeat=self.Bits)),
+                            len(self.Range)):
 
-            self.ImageToBits[ self.Range[i] ] = bs
-            self.BitsToImage[ bs ] = self.Range[i]
+            self.ImageToBits[self.Range[i]] = bs
+            self.BitsToImage[bs] = self.Range[i]
 
-    def image_to_bitstring(self,im):
+    def image_to_bitstring(self, im):
         return self.ImageToBits[im]
 
-    def bitstring_to_image(self,bs):
+    def bitstring_to_image(self, bs):
         return self.BitsToImage[bs]
 
     def forbid_bitstring(self, i, bs):
         """Generates a clause that exclude 'i -> bs' mapping """
-        return [ ( bs[b]==0, self.var_name(i,self.Bits-1-b))
-                 for b in range(self.Bits) ]
+        return [(bs[b] == 0, self.var_name(i, self.Bits-1-b))
+                for b in range(self.Bits)]
 
     def forbid_image(self, i, j):
         """Generates a clause that exclude 'i -> j' mapping """
-        return self.forbid_bitstring(i,self.ImageToBits[j])
+        return self.forbid_bitstring(i, self.ImageToBits[j])
 
     def clauses(self):
 
         # Avoid strings that do not correspond to elements from the range
-        for i,bs in product(self.Domain,
-                            islice(product([0,1],repeat=self.Bits),len(self.Range),None)):
-             self.forbid_bitstring(i,bs)
+        for i, bs in product(self.Domain,
+                             islice(product([0, 1], repeat=self.Bits), len(self.Range), None)):
+            self.forbid_bitstring(i, bs)
 
         # Injectivity
         if self.Injective:
             for j in self.Range:
-                for i1,i2 in combinations(self.Domain,2):
-                    yield self.forbid_image(i1,j) + self.forbid_image(i2,j)
+                for i1, i2 in combinations(self.Domain, 2):
+                    yield self.forbid_image(i1, j) + self.forbid_image(i2, j)
 
         # Enforce Non Decreasing Mapping
         if self.NonDecreasing:
-            pairs_of_maps = product(combinations(self.Domain,2),
-                                    combinations(self.Range,2))
+            pairs_of_maps = product(combinations(self.Domain, 2),
+                                    combinations(self.Range, 2))
 
-            for (i1,i2),(j1,j2) in pairs_of_maps:
-                yield self.forbid_image(i1,j2) + self.forbid_image(i2,j1)
+            for (i1, i2), (j1, j2) in pairs_of_maps:
+                yield self.forbid_image(i1, j2) + self.forbid_image(i2, j1)
 
-    def load_clauses_to_formula(self,F):
+    def load_clauses_to_formula(self, F):
         for c in self.clauses():
             F.add_clause(c)
 
@@ -1857,7 +1873,7 @@ class binary_mapping(object):
 class disj(tuple):
     __slots__ = ()
 
-    def __new__(cls,*args):
+    def __new__(cls, *args):
         """Clause constraint
 
         Internal representation of a disjunction of a set of literals.
@@ -1878,7 +1894,7 @@ class disj(tuple):
         *args : zero or more ints
             literals in the clause
         """
-        self = super(disj,cls).__new__(cls,args)
+        self = super(disj, cls).__new__(cls, args)
         return self
 
     def __repr__(self):
@@ -1886,9 +1902,8 @@ class disj(tuple):
                                ", ".join(str(i) for i in self))
 
     def __str__(self):
-        literals = [ "{}{}".format("" if l>0 else "¬",abs(l)) for l in self ]
+        literals = ["{}{}".format("" if l > 0 else "¬", abs(l)) for l in self]
         return " ∨ ".join(literals)
-
 
     def n_clauses(self):
         """Number of clauses to represent the constraints"""
@@ -1898,9 +1913,10 @@ class disj(tuple):
         """Clauses to represent the constraint"""
         yield self
 
+
 class xor(tuple):
 
-    def __new__(cls,*args,**kw):
+    def __new__(cls, *args, **kw):
         """Parity constraint
 
         Internal representation of a parity constraint over a set of
@@ -1931,13 +1947,14 @@ class xor(tuple):
 
         """
         if "value" not in kw:
-            raise TypeError("XOR constraints must have \'value\' keyword argument")
-        self = super(xor,cls).__new__(cls,args)
+            raise TypeError(
+                "XOR constraints must have \'value\' keyword argument")
+        self = super(xor, cls).__new__(cls, args)
         self.value = kw['value'] % 2
         return self
 
-    def __eq__(self,other):
-        return self.value == other.value and super(xor,self).__eq__(other)
+    def __eq__(self, other):
+        return self.value == other.value and super(xor, self).__eq__(other)
 
     def __repr__(self):
         return "{}({}, value={})".format("xor",
@@ -1945,14 +1962,14 @@ class xor(tuple):
                                          self.value)
 
     def __str__(self):
-        literals = [ "{}{}".format("" if l>0 else "¬",abs(l)) for l in self ]
-        return "{} {} {} (mod 2)".format(" ⊕ ".join(literals),"==",self.value)
+        literals = ["{}{}".format("" if l > 0 else "¬", abs(l)) for l in self]
+        return "{} {} {} (mod 2)".format(" ⊕ ".join(literals), "==", self.value)
 
     def n_clauses(self):
         """Number of clauses to represent a XOR"""
 
         # Parity of an empty sequence
-        if len(self)==0:
+        if len(self) == 0:
             return self.value % 2
 
         # Parity of a non emtpy sequence
@@ -1962,7 +1979,7 @@ class xor(tuple):
         """Clauses to represent the constraint"""
 
         value = (self.value + len([lit for lit in self if lit < 0])) % 2
-        domains = tuple([(abs(lit),-abs(lit)) for lit in self])
+        domains = tuple([(abs(lit), -abs(lit)) for lit in self])
         for c in product(*domains):
             # Save only the clauses with the right polarity
             parity = len([lit for lit in c if lit < 0]) % 2
@@ -1970,11 +1987,9 @@ class xor(tuple):
                 yield disj(*c)
 
 
-
-
 class less(tuple):
 
-    def __new__(cls,*args,**kw):
+    def __new__(cls, *args, **kw):
         """Less-than constraint
 
         Represent a 'less than' constraint over a set of literals.
@@ -2008,13 +2023,14 @@ class less(tuple):
 
         """
         if "threshold" not in kw:
-            raise TypeError("LESS THAN constraints must have \'threshold\' keyword argument")
-        self = super(less,cls).__new__(cls,args)
+            raise TypeError(
+                "LESS THAN constraints must have \'threshold\' keyword argument")
+        self = super(less, cls).__new__(cls, args)
         self.threshold = kw['threshold']
         return self
 
-    def __eq__(self,other):
-        return self.threshold == other.threshold and super(less,self).__eq__(other)
+    def __eq__(self, other):
+        return self.threshold == other.threshold and super(less, self).__eq__(other)
 
     def __repr__(self):
         return "{}({}, threshold={})".format("less",
@@ -2022,8 +2038,8 @@ class less(tuple):
                                              self.threshold)
 
     def __str__(self):
-        literals = [ "{}{}".format("" if l>0 else "¬",abs(l)) for l in self ]
-        return "({}) {} {}".format(" + ".join(literals),"<",self.threshold)
+        literals = ["{}{}".format("" if l > 0 else "¬", abs(l)) for l in self]
+        return "({}) {} {}".format(" + ".join(literals), "<", self.threshold)
 
     def n_clauses(self):
         """Number of clauses to represent the constraints"""
@@ -2032,10 +2048,10 @@ class less(tuple):
         elif self.threshold <= 0:
             return 1
 
-        def binom(n,k):
+        def binom(n, k):
             return factorial(n) // factorial(k) // factorial(n - k)
 
-        return binom(len(self),self.threshold)
+        return binom(len(self), self.threshold)
 
     def clauses(self):
         """Clauses to represent the constraint"""
@@ -2048,9 +2064,10 @@ class less(tuple):
         for cls in combinations([-l for l in self], self.threshold):
             yield disj(*cls)
 
+
 class leq(tuple):
 
-    def __new__(cls,*args,**kw):
+    def __new__(cls, *args, **kw):
         """Less-than-or-equal-to constraint
 
         Represent a 'less than or equal to' constraint over a set of
@@ -2085,13 +2102,14 @@ class leq(tuple):
 
         """
         if "threshold" not in kw:
-            raise TypeError("LESS OR EQUAL constraints must have \'threshold\' keyword argument")
-        self = super(leq,cls).__new__(cls,args)
+            raise TypeError(
+                "LESS OR EQUAL constraints must have \'threshold\' keyword argument")
+        self = super(leq, cls).__new__(cls, args)
         self.threshold = kw['threshold']
         return self
 
-    def __eq__(self,other):
-        return self.threshold == other.threshold and super(leq,self).__eq__(other)
+    def __eq__(self, other):
+        return self.threshold == other.threshold and super(leq, self).__eq__(other)
 
     def __repr__(self):
         return "{}({}, threshold={})".format("leq",
@@ -2099,22 +2117,21 @@ class leq(tuple):
                                              self.threshold)
 
     def __str__(self):
-        literals = [ "{}{}".format("" if l>0 else "¬",abs(l)) for l in self ]
-        return "{} {} {}".format(" + ".join(literals),"<=",self.threshold)
-
+        literals = ["{}{}".format("" if l > 0 else "¬", abs(l)) for l in self]
+        return "{} {} {}".format(" + ".join(literals), "<=", self.threshold)
 
     def n_clauses(self):
         """Number of clauses to represent the constraints"""
-        return less(*self,threshold=self.threshold+1).n_clauses()
+        return less(*self, threshold=self.threshold+1).n_clauses()
 
     def clauses(self):
         """Clauses to represent the constraint"""
-        return less(*self,threshold=self.threshold+1).clauses()
+        return less(*self, threshold=self.threshold+1).clauses()
 
 
 class greater(tuple):
 
-    def __new__(cls,*args,**kw):
+    def __new__(cls, *args, **kw):
         """Greater-than constraint
 
         Represent a 'greater than' constraint over a set of literals.
@@ -2148,13 +2165,14 @@ class greater(tuple):
 
         """
         if "threshold" not in kw:
-            raise TypeError("GREATER THAN constraints must have \'threshold\' keyword argument")
-        self = super(greater,cls).__new__(cls,args)
+            raise TypeError(
+                "GREATER THAN constraints must have \'threshold\' keyword argument")
+        self = super(greater, cls).__new__(cls, args)
         self.threshold = kw['threshold']
         return self
 
-    def __eq__(self,other):
-        return self.threshold == other.threshold and super(greater,self).__eq__(other)
+    def __eq__(self, other):
+        return self.threshold == other.threshold and super(greater, self).__eq__(other)
 
     def __repr__(self):
         return "{}({}, threshold={})".format("greater",
@@ -2162,8 +2180,8 @@ class greater(tuple):
                                              self.threshold)
 
     def __str__(self):
-        literals = [ "{}{}".format("" if l>0 else "¬",abs(l)) for l in self ]
-        return "{} {} {}".format(" + ".join(literals),">",self.threshold)
+        literals = ["{}{}".format("" if l > 0 else "¬", abs(l)) for l in self]
+        return "{} {} {}".format(" + ".join(literals), ">", self.threshold)
 
     def n_clauses(self):
         """Number of clauses to represent the constraints"""
@@ -2172,11 +2190,11 @@ class greater(tuple):
         elif self.threshold < 0:
             return 0
 
-        def binom(n,k):
+        def binom(n, k):
             return factorial(n) // factorial(k) // factorial(n - k)
 
         # logically it should be binom(LEN,LEN-THR)
-        return binom(len(self),self.threshold)
+        return binom(len(self), self.threshold)
 
     def clauses(self):
         """Clauses to represent the constraint"""
@@ -2191,7 +2209,7 @@ class greater(tuple):
 
 
 class geq(tuple):
-    def __new__(cls,*args,**kw):
+    def __new__(cls, *args, **kw):
         """Greater-than-or-equal-to constraint
 
         Represent a 'greater than or equal to' constraint over a set of
@@ -2226,13 +2244,14 @@ class geq(tuple):
 
         """
         if "threshold" not in kw:
-            raise TypeError("GREATER OR EQUAL constraints must have \'threshold\' keyword argument")
-        self = super(geq,cls).__new__(cls,args)
+            raise TypeError(
+                "GREATER OR EQUAL constraints must have \'threshold\' keyword argument")
+        self = super(geq, cls).__new__(cls, args)
         self.threshold = kw['threshold']
         return self
 
-    def __eq__(self,other):
-        return self.threshold == other.threshold and super(geq,self).__eq__(other)
+    def __eq__(self, other):
+        return self.threshold == other.threshold and super(geq, self).__eq__(other)
 
     def __repr__(self):
         return "{}({}, threshold={})".format("geq",
@@ -2240,19 +2259,20 @@ class geq(tuple):
                                              self.threshold)
 
     def __str__(self):
-        literals = [ "{}{}".format("" if l>0 else "¬",abs(l)) for l in self ]
-        return "{} {} {}".format(" + ".join(literals),">=",self.threshold)
+        literals = ["{}{}".format("" if l > 0 else "¬", abs(l)) for l in self]
+        return "{} {} {}".format(" + ".join(literals), ">=", self.threshold)
 
     def n_clauses(self):
         """Number of clauses to represent the constraints"""
-        return greater(*self,threshold=self.threshold-1).n_clauses()
+        return greater(*self, threshold=self.threshold-1).n_clauses()
 
     def clauses(self):
         """Clauses to represent the constraint"""
-        return greater(*self,threshold=self.threshold-1).clauses()
+        return greater(*self, threshold=self.threshold-1).clauses()
+
 
 class eq(tuple):
-    def __new__(cls,*args,**kw):
+    def __new__(cls, *args, **kw):
         """Equal-to constraint
 
         Represent an 'equal to' constraint over a set of literals.
@@ -2286,13 +2306,14 @@ class eq(tuple):
 
         """
         if "value" not in kw:
-            raise TypeError("EQUAL TO constraints must have \'value\' keyword argument")
-        self = super(eq,cls).__new__(cls,args)
+            raise TypeError(
+                "EQUAL TO constraints must have \'value\' keyword argument")
+        self = super(eq, cls).__new__(cls, args)
         self.value = kw['value']
         return self
 
-    def __eq__(self,other):
-        return self.value == other.value and super(eq,self).__eq__(other)
+    def __eq__(self, other):
+        return self.value == other.value and super(eq, self).__eq__(other)
 
     def __repr__(self):
         return "{}({}, value={})".format("eq",
@@ -2300,25 +2321,25 @@ class eq(tuple):
                                          self.value)
 
     def __str__(self):
-        literals = [ "{}{}".format("" if l>0 else "¬",abs(l)) for l in self ]
-        return "{} {} {}".format(" + ".join(literals),"==",self.value)
+        literals = ["{}{}".format("" if l > 0 else "¬", abs(l)) for l in self]
+        return "{} {} {}".format(" + ".join(literals), "==", self.value)
 
     def n_clauses(self):
         """Number of clauses to represent the constraints"""
-        return leq(*self,threshold=self.value).n_clauses() \
-               + \
-               geq(*self,threshold=self.value).n_clauses()
+        return leq(*self, threshold=self.value).n_clauses() \
+            + \
+            geq(*self, threshold=self.value).n_clauses()
 
     def clauses(self):
         """Clauses to represent the constraint"""
-        for c in leq(*self,threshold=self.value).clauses():
+        for c in leq(*self, threshold=self.value).clauses():
             yield c
-        for c in geq(*self,threshold=self.value).clauses():
+        for c in geq(*self, threshold=self.value).clauses():
             yield c
 
 
 class weighted_eq(tuple):
-    def __new__(cls,*args,**kw):
+    def __new__(cls, *args, **kw):
         """Linear equation constraint
 
         Represent a general linear equation constraint. It is
@@ -2358,13 +2379,14 @@ class weighted_eq(tuple):
 
         """
         if "value" not in kw:
-            raise TypeError("WEIGHTED EQUALITY constraints must have \'value\' keyword argument")
-        self = super(weighted_eq,cls).__new__(cls,args)
+            raise TypeError(
+                "WEIGHTED EQUALITY constraints must have \'value\' keyword argument")
+        self = super(weighted_eq, cls).__new__(cls, args)
         self.value = kw['value']
         return self
 
-    def __eq__(self,other):
-        return self.value == other.value and super(weighted_eq,self).__eq__(other)
+    def __eq__(self, other):
+        return self.value == other.value and super(weighted_eq, self).__eq__(other)
 
     def __repr__(self):
         return "{}({}, value={})".format("weighted_eq",
@@ -2372,8 +2394,8 @@ class weighted_eq(tuple):
                                          self.value)
 
     def __str__(self):
-        terms = [ "{}*{}".format(w,v) for w,v in self ]
-        return "{} {} {}".format(" + ".join(terms),"==",self.value)
+        terms = ["{}*{}".format(w, v) for w, v in self]
+        return "{} {} {}".format(" + ".join(terms), "==", self.value)
 
     def n_clauses(self):
         """Number of clauses to represent the constraints"""
@@ -2382,15 +2404,15 @@ class weighted_eq(tuple):
     def clauses(self):
         """Clauses to represent the constraint"""
 
-
-        domains = tuple([((w,v),(0,-v)) for w,v in self])
+        domains = tuple([((w, v), (0, -v)) for w, v in self])
 
         for summands in product(*domains):
-            if sum(w for w,_ in summands) != self.value:
-                yield disj(*(-v for _,v in summands))
+            if sum(w for w, _ in summands) != self.value:
+                yield disj(*(-v for _, v in summands))
+
 
 class weighted_geq(tuple):
-    def __new__(cls,*args,**kw):
+    def __new__(cls, *args, **kw):
         """Linear inequality constraint (greater than or equal to)
 
         Represent a general linear inequality constraint. It is
@@ -2430,13 +2452,14 @@ class weighted_geq(tuple):
 
         """
         if "threshold" not in kw:
-            raise TypeError("WEIGHTED GREATER OR EQUAL constraints must have \'threshold\' keyword argument")
-        self = super(weighted_geq,cls).__new__(cls,args)
+            raise TypeError(
+                "WEIGHTED GREATER OR EQUAL constraints must have \'threshold\' keyword argument")
+        self = super(weighted_geq, cls).__new__(cls, args)
         self.threshold = kw['threshold']
         return self
 
-    def __eq__(self,other):
-        return self.threshold == other.threshold and super(weighted_geq,self).__eq__(other)
+    def __eq__(self, other):
+        return self.threshold == other.threshold and super(weighted_geq, self).__eq__(other)
 
     def __repr__(self):
         return "{}({}, value={})".format("weighted_geq",
@@ -2444,8 +2467,8 @@ class weighted_geq(tuple):
                                          self.threshold)
 
     def __str__(self):
-        terms = [ "{}*{}".format(w,v) for w,v in self ]
-        return "{} {} {}".format(" + ".join(terms),">=",self.threshold)
+        terms = ["{}*{}".format(w, v) for w, v in self]
+        return "{} {} {}".format(" + ".join(terms), ">=", self.threshold)
 
     def n_clauses(self):
         """Number of clauses to represent the constraints"""
@@ -2454,10 +2477,8 @@ class weighted_geq(tuple):
     def clauses(self):
         """Clauses to represent the constraint"""
 
-
-        domains = tuple([((w,v),(0,-v)) for w,v in self])
+        domains = tuple([((w, v), (0, -v)) for w, v in self])
 
         for summands in product(*domains):
-            if sum(w for w,_ in summands) < self.threshold:
-                yield disj(*(-v for _,v in summands))
-
+            if sum(w for w, _ in summands) < self.threshold:
+                yield disj(*(-v for _, v in summands))

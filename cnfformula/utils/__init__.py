@@ -4,8 +4,7 @@
 """
 
 
-from ..cnf import CNF,disj
-
+from ..cnf import CNF, disj
 
 
 def dimacs2compressed_clauses(file_handle):
@@ -18,20 +17,20 @@ def dimacs2compressed_clauses(file_handle):
     h is a string of text (the header)
     n is the number of variables
     c is the list of compressed clauses.
-    
+
     """
     n = -1  # negative signal that spec line has not been read
     m = -1
 
-    my_header=""
-    my_clauses=[]
+    my_header = ""
+    my_clauses = []
 
-    line_counter=0
-    literal_buffer=[]
+    line_counter = 0
+    literal_buffer = []
 
     for l in file_handle.readlines():
 
-        line_counter+=1
+        line_counter += 1
 
         # Add all the comments to the header. If a comment is found
         # inside the formula, add it to the header as well. Comments
@@ -46,47 +45,44 @@ def dimacs2compressed_clauses(file_handle):
         # It there is no such separator, then a cycle of
         # reading/writing the cnf will change the header section.
         #
-        if l[0]=='c':
-            if l[1]==' ':
+        if l[0] == 'c':
+            if l[1] == ' ':
                 my_header += l[2:] or '\n'
-            else: 
+            else:
                 my_header += l[1:] or '\n'
             continue
 
         # parse spec line
-        if l[0]=='p':
-            if n>=0:
-                raise ValueError("Syntax error: "+
+        if l[0] == 'p':
+            if n >= 0:
+                raise ValueError("Syntax error: " +
                                  "line {} contains a second spec line.".format(line_counter))
-            _,_,nstr,mstr = l.split()
+            _, _, nstr, mstr = l.split()
             n = int(nstr)
             m = int(mstr)
             continue
-            
 
         # parse literals
         for lv in [int(lit) for lit in l.split()]:
-            if lv==0:
+            if lv == 0:
                 my_clauses.append(disj(*literal_buffer))
-                literal_buffer=[]
+                literal_buffer = []
             else:
                 literal_buffer.append(lv)
 
     # Checks at the end of parsing
-    if len(literal_buffer)>0:
+    if len(literal_buffer) > 0:
         raise ValueError("Syntax error: last clause was incomplete")
 
-    if m=='-1':
+    if m == '-1':
         raise ValueError("Warning: empty input formula ")
 
-    if m!=len(my_clauses):
-        raise ValueError("Warning: input formula "+
-                         "contains {} instead of expected {}.".format(len(my_clauses),m))
+    if m != len(my_clauses):
+        raise ValueError("Warning: input formula " +
+                         "contains {} instead of expected {}.".format(len(my_clauses), m))
 
     # return the formula
-    return (my_header,n,my_clauses)
-
-
+    return (my_header, n, my_clauses)
 
 
 def dimacs2cnf(file_handle):
@@ -97,7 +93,7 @@ def dimacs2cnf(file_handle):
 
     cnf = CNF(header=header)
 
-    for i in range(1,nvariables+1):
+    for i in range(1, nvariables+1):
         cnf.add_variable(i)
 
     cnf._add_compressed_constraints(clauses)

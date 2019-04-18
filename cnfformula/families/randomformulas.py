@@ -12,8 +12,7 @@ import cnfformula.cmdline
 import cnfformula.families
 
 
-
-def clause_satisfied(cls,assignments):
+def clause_satisfied(cls, assignments):
     """Test whether a clause is satisfied by all assignments
 
 Test if clauses `cls` is satisfied by all assigment in the
@@ -21,8 +20,8 @@ list assignments.
 """
     for assignment in assignments:
 
-        if  any( var in assignment and polarity == assignment[var]
-                 for (polarity, var) in cls):
+        if any(var in assignment and polarity == assignment[var]
+                for (polarity, var) in cls):
             continue
 
         else:
@@ -30,33 +29,36 @@ list assignments.
 
     return True
 
+
 def sample_clauses(k, indices, m, planted_assignments):
     clauses = set()
     t = 0
-    while len(clauses)<m and t < 10*m:
+    while len(clauses) < m and t < 10*m:
         t += 1
 
-        cls = tuple((random.choice([True,False]),'x_{0}'.format(i))
-                    for i in sorted(random.sample(indices,k)))
+        cls = tuple((random.choice([True, False]), 'x_{0}'.format(i))
+                    for i in sorted(random.sample(indices, k)))
 
-        if clause_satisfied(cls,planted_assignments):
+        if clause_satisfied(cls, planted_assignments):
             clauses.add(cls)
-        
-    if len(clauses)<m:
+
+    if len(clauses) < m:
         return sample_clauses_dense(k, indices, m, planted_assignments)
     return clauses
 
+
 def all_clauses(k, indices, planted_assignments):
     for domain in itertools.combinations(indices, k):
-        for polarity in itertools.product([True,False], repeat=k):
+        for polarity in itertools.product([True, False], repeat=k):
 
-            cls =  list(zip(polarity,('x_{0}'.format(i) for i in domain)))
+            cls = list(zip(polarity, ('x_{0}'.format(i) for i in domain)))
             if clause_satisfied(cls, planted_assignments):
                 yield cls
 
-                
+
 def sample_clauses_dense(k, indices, m, planted_assignments):
     return random.sample(list(all_clauses(k, indices, planted_assignments)), m)
+
 
 @cnfformula.families.register_cnf_generator
 def RandomKCNF(k, n, m, seed=None, planted_assignments=[]):
@@ -99,25 +101,26 @@ def RandomKCNF(k, n, m, seed=None, planted_assignments=[]):
     if seed:
         random.seed(seed)
 
-
-    if n<0 or m<0 or k<0:
+    if n < 0 or m < 0 or k < 0:
         raise ValueError("Parameters must be non-negatives.")
 
-    if k>n:
+    if k > n:
         raise ValueError("Clauses cannot have more {} literals.".format(n))
 
     F = CNF()
-    F.header = "Random {}-CNF over {} variables and {} clauses\n".format(k,n,m) + F.header
+    F.header = "Random {}-CNF over {} variables and {} clauses\n".format(
+        k, n, m) + F.header
     F.mode_strict()
 
-    indices = range(1,n+1)
+    indices = range(1, n+1)
     for i in indices:
         F.add_variable('x_{0}'.format(i))
     try:
         for clause in sample_clauses(k, indices, m, planted_assignments):
             F.add_clause(list(clause))
     except ValueError:
-        raise ValueError("There are fewer clauses available than the number requested")
+        raise ValueError(
+            "There are fewer clauses available than the number requested")
 
     return F
 
@@ -126,8 +129,8 @@ def RandomKCNF(k, n, m, seed=None, planted_assignments=[]):
 class RandCmdHelper(object):
     """Command line helper for random formulas
     """
-    name='randkcnf'
-    description='random k-CNF'
+    name = 'randkcnf'
+    description = 'random k-CNF'
 
     @staticmethod
     def setup_command_line(parser):
@@ -136,9 +139,11 @@ class RandCmdHelper(object):
         Arguments:
         - `parser`: parser to load with options.
         """
-        parser.add_argument('k',metavar='<k>',type=int,help="clause width")
-        parser.add_argument('n',metavar='<n>',type=int,help="number of variables")
-        parser.add_argument('m',metavar='<m>',type=int,help="number of clauses")
+        parser.add_argument('k', metavar='<k>', type=int, help="clause width")
+        parser.add_argument('n', metavar='<n>', type=int,
+                            help="number of variables")
+        parser.add_argument('m', metavar='<m>', type=int,
+                            help="number of clauses")
 
     @staticmethod
     def build_cnf(args):

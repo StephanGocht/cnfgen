@@ -7,17 +7,17 @@
 from cnfformula.cnf import CNF
 from cnfformula.cmdline import SimpleGraphHelper
 
-from cnfformula.cmdline  import register_cnfgen_subcommand
+from cnfformula.cmdline import register_cnfgen_subcommand
 from cnfformula.families import register_cnf_generator
 
-from cnfformula.graphs import enumerate_vertices,enumerate_edges,neighbors
+from cnfformula.graphs import enumerate_vertices, enumerate_edges, neighbors
 
 from itertools import combinations, chain
 import collections
 
 
 @register_cnf_generator
-def GraphColoringFormula(G,colors,functional=True):
+def GraphColoringFormula(G, colors, functional=True):
     """Generates the clauses for colorability formula
 
     The formula encodes the fact that the graph :math:`G` has a coloring
@@ -38,54 +38,53 @@ def GraphColoringFormula(G,colors,functional=True):
        the CNF encoding of the coloring problem on graph ``G``
 
     """
-    col=CNF()
+    col = CNF()
     col.mode_strict()
 
-    if isinstance(colors,int) and colors>=0:
-        colors = list(range(1,colors+1))
-    
+    if isinstance(colors, int) and colors >= 0:
+        colors = list(range(1, colors+1))
+
     if not isinstance(list, collections.Iterable):
         ValueError("Parameter \"colors\" is expected to be a iterable")
-    
+
     # Describe the formula
-    name="graph colorability"
-    
-    if hasattr(G,'name'):
-        col.header=name+" of graph:\n"+G.name+".\n\n"+col.header
+    name = "graph colorability"
+
+    if hasattr(G, 'name'):
+        col.header = name+" of graph:\n"+G.name+".\n\n"+col.header
     else:
-        col.header=name+".\n\n"+col.header
+        col.header = name+".\n\n"+col.header
 
     # Fix the vertex order
-    V=enumerate_vertices(G)
+    V = enumerate_vertices(G)
 
     # Create the variables
     for vertex in V:
         for color in colors:
-            col.add_variable('x_{{{0},{1}}}'.format(vertex,color))
-        
+            col.add_variable('x_{{{0},{1}}}'.format(vertex, color))
+
     # Each vertex has a color
     for vertex in V:
         clause = []
         for color in colors:
-            clause += [(True,'x_{{{0},{1}}}'.format(vertex,color))]
+            clause += [(True, 'x_{{{0},{1}}}'.format(vertex, color))]
         col.add_clause(clause)
-        
+
         # unique color per vertex
         if functional:
-            for (c1,c2) in combinations(colors,2):
+            for (c1, c2) in combinations(colors, 2):
                 col.add_clause([
-                    (False,'x_{{{0},{1}}}'.format(vertex,c1)),
-                    (False,'x_{{{0},{1}}}'.format(vertex,c2))])
+                    (False, 'x_{{{0},{1}}}'.format(vertex, c1)),
+                    (False, 'x_{{{0},{1}}}'.format(vertex, c2))])
 
     # This is a legal coloring
-    for (v1,v2) in enumerate_edges(G):
+    for (v1, v2) in enumerate_edges(G):
         for c in colors:
             col.add_clause([
-                (False,'x_{{{0},{1}}}'.format(v1,c)),
-                (False,'x_{{{0},{1}}}'.format(v2,c))])
-            
-    return col
+                (False, 'x_{{{0},{1}}}'.format(v1, c)),
+                (False, 'x_{{{0},{1}}}'.format(v2, c))])
 
+    return col
 
 
 @register_cnf_generator
@@ -124,12 +123,12 @@ def EvenColoringFormula(G):
     F.mode_strict()
     F.header = "Even coloring formula on graph " + G.name + "\n" + F.header
 
-    def var_name(u,v):
-        if u<=v:
-            return 'x_{{{0},{1}}}'.format(u,v)
+    def var_name(u, v):
+        if u <= v:
+            return 'x_{{{0},{1}}}'.format(u, v)
         else:
-            return 'x_{{{0},{1}}}'.format(v,u)
-    
+            return 'x_{{{0},{1}}}'.format(v, u)
+
     for (u, v) in enumerate_edges(G):
         F.add_variable(var_name(u, v))
 
@@ -137,27 +136,30 @@ def EvenColoringFormula(G):
     for v in enumerate_vertices(G):
 
         if G.degree(v) % 2 == 1:
-            raise ValueError("Markstrom formulas requires all vertices to have even degree.")
+            raise ValueError(
+                "Markstrom formulas requires all vertices to have even degree.")
 
-        edge_vars = [ var_name(u, v) for u in neighbors(G, v) ]
+        edge_vars = [var_name(u, v) for u in neighbors(G, v)]
 
-        F.add_exactly_half_ceil(edge_vars)   # F.add_exactly_half_floor would work the same
+        # F.add_exactly_half_floor would work the same
+        F.add_exactly_half_ceil(edge_vars)
 
     return F
 
+
 @register_cnf_generator
-def ExtendedEvenColoringFormula(G,T):
+def ExtendedEvenColoringFormula(G, T):
     F = EvenColoringFormula(G)
     F.mode_strict()
 
-    def var_name(u,v,c):
-        if u<=v:
-            return '{2}_{{{0},{1}}}'.format(u,v,c)
+    def var_name(u, v, c):
+        if u <= v:
+            return '{2}_{{{0},{1}}}'.format(u, v, c)
         else:
-            return '{2}_{{{0},{1}}}'.format(v,u,c)
+            return '{2}_{{{0},{1}}}'.format(v, u, c)
 
-    true_vars = [var_name(u,v,'t') for (u,v) in enumerate_edges(G)]
-    false_vars = [var_name(u,v,'f') for (u,v) in enumerate_edges(G)]
+    true_vars = [var_name(u, v, 't') for (u, v) in enumerate_edges(G)]
+    false_vars = [var_name(u, v, 'f') for (u, v) in enumerate_edges(G)]
 
     for var in true_vars:
         F.add_variable(var)
@@ -165,22 +167,23 @@ def ExtendedEvenColoringFormula(G,T):
         F.add_variable(var)
 
     for (u, v) in enumerate_edges(G):
-        F.add_clause([(True,var_name(u,v,'t')),
-                      (False,var_name(u,v,'x'))])
-        F.add_clause([(True,var_name(u,v,'f')),
-                      (True,var_name(u,v,'x'))])
+        F.add_clause([(True, var_name(u, v, 't')),
+                      (False, var_name(u, v, 'x'))])
+        F.add_clause([(True, var_name(u, v, 'f')),
+                      (True, var_name(u, v, 'x'))])
 
-    F.add_linear(*chain(*[(3,var) for var in true_vars] +
-                         [(1,var) for var in false_vars] + [("<=", T)]))
+    F.add_linear(*chain(*[(3, var) for var in true_vars] +
+                         [(1, var) for var in false_vars] + [("<=", T)]))
 
     return F
-        
+
+
 @register_cnfgen_subcommand
 class KColorCmdHelper(object):
     """Command line helper for k-color formula
     """
-    name='kcolor'
-    description='k-colorability formula'
+    name = 'kcolor'
+    description = 'k-colorability formula'
 
     @staticmethod
     def setup_command_line(parser):
@@ -189,9 +192,9 @@ class KColorCmdHelper(object):
         Arguments:
         - `parser`: parser to load with options.
         """
-        parser.add_argument('k',metavar='<k>',type=int,action='store',help="number of available colors")
+        parser.add_argument('k', metavar='<k>', type=int,
+                            action='store', help="number of available colors")
         SimpleGraphHelper.setup_command_line(parser)
-
 
     @staticmethod
     def build_cnf(args):
@@ -201,41 +204,46 @@ class KColorCmdHelper(object):
         - `args`: command line options
         """
         G = SimpleGraphHelper.obtain_graph(args)
-        return GraphColoringFormula(G,list(range(1,args.k+1)))
-
+        return GraphColoringFormula(G, list(range(1, args.k+1)))
 
 
 @register_cnfgen_subcommand
 class ECCmdHelper(object):
-    name='ec'
-    description='even coloring formulas'
-    
+    name = 'ec'
+    description = 'even coloring formulas'
+
     @staticmethod
     def setup_command_line(parser):
         SimpleGraphHelper.setup_command_line(parser)
 
     @staticmethod
     def build_cnf(args):
-        G = SimpleGraphHelper.obtain_graph(args) 
+        G = SimpleGraphHelper.obtain_graph(args)
         return EvenColoringFormula(G)
+
 
 @register_cnfgen_subcommand
 class EECCmdHelper(object):
-    name='extec'
-    description='extended even coloring formulas'
-    
+    name = 'extec'
+    description = 'extended even coloring formulas'
+
     @staticmethod
     def setup_command_line(parser):
         group = parser.add_mutually_exclusive_group(required=True)
-        group.add_argument('--mass',metavar='<T>',type=int,action='store',help="Truth mass in the unbalancedness constraint")
-        group.add_argument('--rational',action='store_true',help="Set truth mass to 2E")
-        group.add_argument('--no-rational',action='store_true',help="Set truth mass to 2E-1")
+        group.add_argument('--mass', metavar='<T>', type=int, action='store',
+                           help="Truth mass in the unbalancedness constraint")
+        group.add_argument('--rational', action='store_true',
+                           help="Set truth mass to 2E")
+        group.add_argument('--no-rational', action='store_true',
+                           help="Set truth mass to 2E-1")
         SimpleGraphHelper.setup_command_line(parser)
 
     @staticmethod
     def build_cnf(args):
         G = SimpleGraphHelper.obtain_graph(args)
         T = args.mass
-        if args.rational : T = 2*G.size()
-        if args.no_rational : T = 2*G.size()-1
-        return ExtendedEvenColoringFormula(G,T)
+        if args.rational:
+            T = 2*G.size()
+        if args.no_rational:
+            T = 2*G.size()-1
+        return ExtendedEvenColoringFormula(G, T)

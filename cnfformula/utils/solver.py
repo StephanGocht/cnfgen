@@ -15,7 +15,7 @@ import sys
 __all__ = ["supported_satsolvers", "is_satisfiable", "have_satsolver"]
 
 
-def _satsolve_filein_fileout(F, cmd='minisat',verbose=0):
+def _satsolve_filein_fileout(F, cmd='minisat', verbose=0):
     """Test CNF satisfiability using a minisat-style solver.
 
     This also works fine using `glucose` instead of `minisat`, or any
@@ -24,7 +24,7 @@ def _satsolve_filein_fileout(F, cmd='minisat',verbose=0):
     Parameters
     ----------
     F  : a CNF formula
-    
+
     cmd : string
         the command line used to invoke the SAT solver.
 
@@ -74,16 +74,16 @@ def _satsolve_filein_fileout(F, cmd='minisat',verbose=0):
     # Run the command, store its output and remove the temporary files.
     try:
 
-        final_command = cmd + " " + cnf.name + " " +sat.name
+        final_command = cmd + " " + cnf.name + " " + sat.name
 
-        if verbose >=1:
-            print("$ "+final_command,file=sys.stderr)
+        if verbose >= 1:
+            print("$ "+final_command, file=sys.stderr)
 
         p = subprocess.Popen(args=cmd.split()+[cnf.name, sat.name],
-                         stdin=subprocess.PIPE,
-                         stdout=subprocess.PIPE)
-        (output,_) = p.communicate()
-        sat     = open(sat.name, "r")
+                             stdin=subprocess.PIPE,
+                             stdout=subprocess.PIPE)
+        (output, _) = p.communicate()
+        sat = open(sat.name, "r")
         foutput = sat.read().split()
         sat.close()
     except OSError:
@@ -100,12 +100,13 @@ def _satsolve_filein_fileout(F, cmd='minisat',verbose=0):
     result = None
     witness = None
 
-    if verbose>=2:
-        print(output,file=sys.stderr)
-        
+    if verbose >= 2:
+        print(output, file=sys.stderr)
+
     if len(foutput) == 0:
 
-        raise RuntimeError("Error during SAT solver call: {}.\n".format(" ".join([cmd,cnf.name, sat.name])))
+        raise RuntimeError("Error during SAT solver call: {}.\n".format(
+            " ".join([cmd, cnf.name, sat.name])))
 
     elif foutput[0] == 'SAT':
 
@@ -121,12 +122,13 @@ def _satsolve_filein_fileout(F, cmd='minisat',verbose=0):
 
     else:
 
-        raise RuntimeError("Error during SAT solver call: {}.\n".format(" ".join([cmd,cnf.name, sat.name])))
+        raise RuntimeError("Error during SAT solver call: {}.\n".format(
+            " ".join([cmd, cnf.name, sat.name])))
 
     return (result, result and witness or None)
 
 
-def _satsolve_stdin_stdout(F, cmd='lingeling',verbose=0):
+def _satsolve_stdin_stdout(F, cmd='lingeling', verbose=0):
     """Test CNF satisfiability using a dimacs I/O compatible solver.
 
     This works fine using any other solver which respects the dimacs
@@ -136,10 +138,10 @@ def _satsolve_stdin_stdout(F, cmd='lingeling',verbose=0):
     Parameters
     ----------
     F  : a CNF formula
-    
+
     cmd : string
         the command line used to invoke the SAT solver.
-    
+
     verbose: int
        0 or less means no output. 1 shows the command line actually
        run. 2 outputs the solver output. (default: 0)
@@ -182,9 +184,9 @@ def _satsolve_stdin_stdout(F, cmd='lingeling',verbose=0):
     # call solver
     output = ""
     try:
-        
-        if verbose >=1:
-            print("$ "+cmd,file=sys.stderr)
+
+        if verbose >= 1:
+            print("$ "+cmd, file=sys.stderr)
 
         p = subprocess.Popen(args=cmd.split(),
                              stdin=subprocess.PIPE,
@@ -207,8 +209,8 @@ def _satsolve_stdin_stdout(F, cmd='lingeling',verbose=0):
     for line in output.splitlines():
 
         if verbose >= 2:
-            print(line,file=sys.stderr)
-        
+            print(line, file=sys.stderr)
+
         if len(line) == 0:
             continue
 
@@ -245,10 +247,10 @@ def _satsolve_filein_stdout(F, cmd='sat4j', verbose=0):
     Parameters
     ----------
     F  : a CNF formula
-    
+
     cmd : string
         the command line used to invoke the SAT solver.
-    
+
     verbose: int
        0 or less means no output. 1 shows the command line actually
        run. 2 outputs the solver output. (default: 0)
@@ -281,9 +283,9 @@ def _satsolve_filein_stdout(F, cmd='sat4j', verbose=0):
 
         final_command = cmd + " " + cnf.name
 
-        if verbose >=1:
-            print("$ "+final_command,file=sys.stderr)
-        
+        if verbose >= 1:
+            print("$ "+final_command, file=sys.stderr)
+
         p = subprocess.Popen(args=cmd.split()+[cnf.name],
                              stdin=subprocess.PIPE,
                              stdout=subprocess.PIPE)
@@ -302,10 +304,9 @@ def _satsolve_filein_stdout(F, cmd='sat4j', verbose=0):
     witness = []
     result = None
 
+    if verbose >= 2:
+        print(output, file=sys.stderr)
 
-    if verbose>=2:
-        print(output,file=sys.stderr)
-        
     for line in output.splitlines():
 
         if len(line) == 0:
@@ -323,8 +324,9 @@ def _satsolve_filein_stdout(F, cmd='sat4j', verbose=0):
                         for el in line.split() if el != "v" and el != "0"]
 
     if result is None:
-        raise RuntimeError("Error during SAT solver call: {}.\n".format(cmd+" "+cnf.name))
-        
+        raise RuntimeError(
+            "Error during SAT solver call: {}.\n".format(cmd+" "+cnf.name))
+
     # Now witness is a list [v1,v2,...,vn] where vi is either -i or
     # +i, to represent the assignment. We translate this to our
     # desired output.
@@ -394,8 +396,6 @@ def have_satsolver(solvers=None):
     return False
 
 
-
-
 def is_satisfiable(F, cmd=None, sameas=None, verbose=0):
     """Determines whether a CNF is satisfiable or not.
 
@@ -444,7 +444,7 @@ def is_satisfiable(F, cmd=None, sameas=None, verbose=0):
        if `sameas` is set and does not match the name of a supported solver.
     TypeError
        if F is not a CNF object.
-    
+
     Supported solvers:
     ------------------
     See `cnfformula.utils.solver.supported_satsolvers`
@@ -496,7 +496,7 @@ def is_satisfiable(F, cmd=None, sameas=None, verbose=0):
         if not have_satsolver(solvers=[solver]):
             continue
         else:
-            return s_func(F, solver_cmd,verbose=verbose)
+            return s_func(F, solver_cmd, verbose=verbose)
 
     # no solver was available.
     if len(solver_cmds) == 1:

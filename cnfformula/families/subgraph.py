@@ -3,7 +3,7 @@
 """Implementation of formulas that check for subgraphs
 """
 
-from cnfformula.cnf import CNF,unary_mapping
+from cnfformula.cnf import CNF, unary_mapping
 from cnfformula.cmdline import SimpleGraphHelper
 
 import cnfformula.families
@@ -14,15 +14,16 @@ from itertools import product
 from itertools import permutations
 from cnfformula.graphs import enumerate_vertices
 
-from math import log,ceil
+from math import log, ceil
 
-from networkx  import complete_graph
-from networkx  import empty_graph
+from networkx import complete_graph
+from networkx import empty_graph
 
 from textwrap import dedent
 
+
 @cnfformula.families.register_cnf_generator
-def SubgraphFormula(graph,templates, symmetric=False):
+def SubgraphFormula(graph, templates, symmetric=False):
     """Test whether a graph contains one of the templates.
 
     Given a graph :math:`G` and a sequence of template graphs
@@ -57,51 +58,51 @@ def SubgraphFormula(graph,templates, symmetric=False):
 
     """
 
-    F=CNF()
+    F = CNF()
     F.mode_strict()
-    
+
     # One of the templates is chosen to be the subgraph
-    if len(templates)==0:
+    if len(templates) == 0:
         return F
-    elif len(templates)==1:
-        selectors=[]
-    elif len(templates)==2:
-        selectors=['c']
+    elif len(templates) == 1:
+        selectors = []
+    elif len(templates) == 2:
+        selectors = ['c']
     else:
-        selectors=['c_{{{}}}'.format(i) for i in range(len(templates))]
+        selectors = ['c_{{{}}}'.format(i) for i in range(len(templates))]
 
     for s in selectors:
         F.add_variable(s)
-        
-    if len(selectors)>1:
-        for cls in F.equal_to_constraint(selectors,1):
-            F.add_clause( cls )
+
+    if len(selectors) > 1:
+        for cls in F.equal_to_constraint(selectors, 1):
+            F.add_clause(cls)
 
     # comment the formula accordingly
-    if len(selectors)>1:
-        F.header=dedent("""\
+    if len(selectors) > 1:
+        F.header = dedent("""\
                  CNF encoding of the claim that a graph contains one among
                  a family of {0} possible subgraphs.
                  """.format(len(templates))) + F.header
     else:
-        F.header=dedent("""\
+        F.header = dedent("""\
                  CNF encoding of the claim that a graph contains an induced
                  copy of a subgraph.
-                 """.format(len(templates)))  + F.header
+                 """.format(len(templates))) + F.header
 
     # A subgraph is chosen
-    N=graph.order()
-    k=max([s.order() for s in templates])
+    N = graph.order()
+    k = max([s.order() for s in templates])
 
-    var_name = lambda i,j: "S_{{{0},{1}}}".format(i,j)
+    def var_name(i, j): return "S_{{{0},{1}}}".format(i, j)
 
     if symmetric:
-        mapping = unary_mapping(list(range(k)),list(range(N)),var_name=var_name,
-                                functional=True,injective=True,
+        mapping = unary_mapping(list(range(k)), list(range(N)), var_name=var_name,
+                                functional=True, injective=True,
                                 nondecreasing=True)
     else:
-        mapping = unary_mapping(list(range(k)),list(range(N)),var_name=var_name,
-                                functional=True,injective=True,
+        mapping = unary_mapping(list(range(k)), list(range(N)), var_name=var_name,
+                                functional=True, injective=True,
                                 nondecreasing=False)
 
     mapping.load_variables_to_formula(F)
@@ -111,53 +112,50 @@ def SubgraphFormula(graph,templates, symmetric=False):
     # edges to edges and non-edges to non-edges for the active
     # template.
 
-    if len(templates)==1:
+    if len(templates) == 1:
 
         activation_prefixes = [[]]
 
-    elif len(templates)==2:
+    elif len(templates) == 2:
 
-        activation_prefixes = [[(True,selectors[0])],[(False,selectors[0])]]
+        activation_prefixes = [[(True, selectors[0])], [(False, selectors[0])]]
 
     else:
-        activation_prefixes = [[(True,v)] for v in selectors]
-
+        activation_prefixes = [[(True, v)] for v in selectors]
 
     # maps must preserve the structure of the template graph
     gV = enumerate_vertices(graph)
 
     for i in range(len(templates)):
 
-        k  = templates[i].order()
+        k = templates[i].order()
         tV = enumerate_vertices(templates[i])
 
         if symmetric:
             # Using non-decreasing map to represent a subset
-            localmaps = product(combinations(list(range(k)),2),
-                                combinations(list(range(N)),2))
+            localmaps = product(combinations(list(range(k)), 2),
+                                combinations(list(range(N)), 2))
         else:
-            localmaps = product(combinations(list(range(k)),2),
-                                permutations(list(range(N)),2))
-       
+            localmaps = product(combinations(list(range(k)), 2),
+                                permutations(list(range(N)), 2))
 
-        for (i1,i2),(j1,j2) in localmaps:
+        for (i1, i2), (j1, j2) in localmaps:
 
             # check if this mapping is compatible
-            tedge=templates[i].has_edge(tV[i1],tV[i2])
-            gedge=graph.has_edge(gV[j1],gV[j2])
+            tedge = templates[i].has_edge(tV[i1], tV[i2])
+            gedge = graph.has_edge(gV[j1], gV[j2])
             if tedge == gedge:
                 continue
 
             # if it is not, add the corresponding
             F.add_clause(activation_prefixes[i] +
-                         [(False,var_name(i1,j1)), (False,var_name(i2,j2)) ])
+                         [(False, var_name(i1, j1)), (False, var_name(i2, j2))])
 
     return F
 
 
-
 @cnfformula.families.register_cnf_generator
-def CliqueFormula(G,k):
+def CliqueFormula(G, k):
     """Test whether a graph has a k-clique.
 
     Given a graph :math:`G` and a non negative value :math:`k`, the
@@ -175,11 +173,11 @@ def CliqueFormula(G,k):
     a CNF object
 
     """
-    return SubgraphFormula(G,[complete_graph(k)],symmetric=True)
+    return SubgraphFormula(G, [complete_graph(k)], symmetric=True)
 
 
 @cnfformula.families.register_cnf_generator
-def BinaryCliqueFormula(G,k):
+def BinaryCliqueFormula(G, k):
     """Test whether a graph has a k-clique.
 
     Given a graph :math:`G` and a non negative value :math:`k`, the
@@ -199,28 +197,28 @@ def BinaryCliqueFormula(G,k):
     a CNF object
 
     """
-    F=CNF()
-    F.header="Binary {0}-clique formula\n".format(k) + F.header
-    
-    mapping=CNF.binary_mapping(range(1,k+1), G.nodes(),
-                               injective = True,
-                               nondecreasing = True)
+    F = CNF()
+    F.header = "Binary {0}-clique formula\n".format(k) + F.header
+
+    mapping = CNF.binary_mapping(range(1, k+1), G.nodes(),
+                                 injective=True,
+                                 nondecreasing=True)
 
     mapping.load_variables_to_formula(F)
     mapping.load_clauses_to_formula(F)
 
-    for (i1,i2),(v1,v2) in product(combinations(range(1,k+1),2),
-                                   combinations(G.nodes(),2)):
-    
-        if not G.has_edge(v1,v2):
-            F.add_clause( clauses_gen.forbid_image(i1,v1) +
-                          clauses_gen.forbid_image(i2,v2))
+    for (i1, i2), (v1, v2) in product(combinations(range(1, k+1), 2),
+                                      combinations(G.nodes(), 2)):
+
+        if not G.has_edge(v1, v2):
+            F.add_clause(clauses_gen.forbid_image(i1, v1) +
+                         clauses_gen.forbid_image(i2, v2))
 
     return F
 
 
 @cnfformula.families.register_cnf_generator
-def RamseyWitnessFormula(G,k,s):
+def RamseyWitnessFormula(G, k, s):
     """Test whether a graph contains one of the templates.
 
     Given a graph :math:`G` and a non negative values :math:`k` and
@@ -242,15 +240,15 @@ def RamseyWitnessFormula(G,k,s):
     a CNF object
 
     """
-    return SubgraphFormula(G,[complete_graph(k),empty_graph(s)],symmetric=True)
+    return SubgraphFormula(G, [complete_graph(k), empty_graph(s)], symmetric=True)
 
 
 @cnfformula.cmdline.register_cnfgen_subcommand
 class KCliqueCmdHelper(object):
     """Command line helper for k-clique formula
     """
-    name='kclique'
-    description='k clique formula'
+    name = 'kclique'
+    description = 'k clique formula'
 
     @staticmethod
     def setup_command_line(parser):
@@ -259,9 +257,9 @@ class KCliqueCmdHelper(object):
         Arguments:
         - `parser`: parser to load with options.
         """
-        parser.add_argument('k',metavar='<k>',type=int,action='store',help="size of the clique to be found")
+        parser.add_argument('k', metavar='<k>', type=int,
+                            action='store', help="size of the clique to be found")
         SimpleGraphHelper.setup_command_line(parser)
-
 
     @staticmethod
     def build_cnf(args):
@@ -271,15 +269,15 @@ class KCliqueCmdHelper(object):
         - `args`: command line options
         """
         G = SimpleGraphHelper.obtain_graph(args)
-        return CliqueFormula(G,args.k)
+        return CliqueFormula(G, args.k)
 
 
 @cnfformula.cmdline.register_cnfgen_subcommand
 class BinaryKCliqueCmdHelper(object):
     """Command line helper for k-clique formula
     """
-    name='kcliquebin'
-    description='Binary k clique formula'
+    name = 'kcliquebin'
+    description = 'Binary k clique formula'
 
     @staticmethod
     def setup_command_line(parser):
@@ -288,9 +286,9 @@ class BinaryKCliqueCmdHelper(object):
         Arguments:
         - `parser`: parser to load with options.
         """
-        parser.add_argument('k',metavar='<k>',type=int,action='store',help="size of the clique to be found")
+        parser.add_argument('k', metavar='<k>', type=int,
+                            action='store', help="size of the clique to be found")
         SimpleGraphHelper.setup_command_line(parser)
-
 
     @staticmethod
     def build_cnf(args):
@@ -300,14 +298,15 @@ class BinaryKCliqueCmdHelper(object):
         - `args`: command line options
         """
         G = SimpleGraphHelper.obtain_graph(args)
-        return BinaryCliqueFormula(G,args.k)
+        return BinaryCliqueFormula(G, args.k)
+
 
 @cnfformula.cmdline.register_cnfgen_subcommand
 class RWCmdHelper(object):
     """Command line helper for ramsey graph formula
     """
-    name='ramlb'
-    description='unsat if G witnesses that r(k,s)>|V(G)| (i.e. G has not k-clique nor s-stable)'
+    name = 'ramlb'
+    description = 'unsat if G witnesses that r(k,s)>|V(G)| (i.e. G has not k-clique nor s-stable)'
 
     @staticmethod
     def setup_command_line(parser):
@@ -316,12 +315,11 @@ class RWCmdHelper(object):
         Arguments:
         - `parser`: parser to load with options.
         """
-        parser.add_argument('k',metavar='<k>',type=int,
-                            action='store',help="size of the clique to be found")
-        parser.add_argument('s',metavar='<s>',type=int,
-                            action='store',help="size of the stable to be found")
+        parser.add_argument('k', metavar='<k>', type=int,
+                            action='store', help="size of the clique to be found")
+        parser.add_argument('s', metavar='<s>', type=int,
+                            action='store', help="size of the stable to be found")
         SimpleGraphHelper.setup_command_line(parser)
-
 
     @staticmethod
     def build_cnf(args):
@@ -331,14 +329,15 @@ class RWCmdHelper(object):
         - `args`: command line options
         """
         G = SimpleGraphHelper.obtain_graph(args)
-        return RamseyWitnessFormula(G,args.k,args.s)
+        return RamseyWitnessFormula(G, args.k, args.s)
+
 
 @cnfformula.cmdline.register_cnfgen_subcommand
 class SubGraphCmdHelper(object):
     """Command line helper for Graph Isomorphism formula
     """
-    name='subgraph'
-    description='subgraph formula'
+    name = 'subgraph'
+    description = 'subgraph formula'
 
     @staticmethod
     def setup_command_line(parser):
@@ -347,9 +346,8 @@ class SubGraphCmdHelper(object):
         Arguments:
         - `parser`: parser to load with options.
         """
-        SimpleGraphHelper.setup_command_line(parser,suffix="",required=True)
-        SimpleGraphHelper.setup_command_line(parser,suffix="T",required=True)
-
+        SimpleGraphHelper.setup_command_line(parser, suffix="", required=True)
+        SimpleGraphHelper.setup_command_line(parser, suffix="T", required=True)
 
     @staticmethod
     def build_cnf(args):
@@ -358,8 +356,6 @@ class SubGraphCmdHelper(object):
         Arguments:
         - `args`: command line options
         """
-        G = SimpleGraphHelper.obtain_graph(args,suffix="")
-        T = SimpleGraphHelper.obtain_graph(args,suffix="T")
-        return SubgraphFormula(G,[T],symmetric=False)
-
-
+        G = SimpleGraphHelper.obtain_graph(args, suffix="")
+        T = SimpleGraphHelper.obtain_graph(args, suffix="T")
+        return SubgraphFormula(G, [T], symmetric=False)

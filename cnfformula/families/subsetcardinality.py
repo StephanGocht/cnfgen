@@ -7,13 +7,14 @@ from cnfformula.cnf import CNF
 
 from cnfformula.cmdline import BipartiteGraphHelper
 
-from cnfformula.graphs import bipartite_sets,enumerate_edges,neighbors
+from cnfformula.graphs import bipartite_sets, enumerate_edges, neighbors
 
 import cnfformula.families
 import cnfformula.cmdline
 
+
 @cnfformula.families.register_cnf_generator
-def SubsetCardinalityFormula(B, equalities = False):
+def SubsetCardinalityFormula(B, equalities=False):
     r"""SubsetCardinalityFormula
 
     Consider a bipartite graph :math:`B`. The CNF claims that at least half
@@ -32,24 +33,24 @@ def SubsetCardinalityFormula(B, equalities = False):
     For every left vertex i with neighborhood :math:`\Gamma(i)`
 
     .. math::
-         
+
          \sum_{j \in \Gamma(i)} x_{i,j} \geq \frac{|\Gamma(i)|}{2}
 
     For every right vertex j with neighborhood :math:`\Gamma(j)`
 
     .. math::
-         
+
          \sum_{i \in \Gamma(j)} x_{i,j} \leq \frac{|\Gamma(j)|}{2}.
 
     If the ``equalities`` flag is true, the constraints are instead
     represented by equations.
-    
+
     .. math::
-         
+
          \sum_{j \in \Gamma(i)} x_{i,j} = \left\lceil \frac{|\Gamma(i)|}{2} \right\rceil
 
     .. math::
-         
+
          \sum_{i \in \Gamma(j)} x_{i,j} = \left\lfloor \frac{|\Gamma(j)|}{2} \right\rfloor .
 
     Parameters
@@ -81,24 +82,24 @@ def SubsetCardinalityFormula(B, equalities = False):
 
     """
     Left, Right = bipartite_sets(B)
-            
-    ssc=CNF()
-    ssc.header="Subset cardinality formula for graph {0}\n".format(B.name)
+
+    ssc = CNF()
+    ssc.header = "Subset cardinality formula for graph {0}\n".format(B.name)
     ssc.mode_strict()
-    
-    def var_name(u,v):
+
+    def var_name(u, v):
         """Compute the variable names."""
-        if u<=v:
-            return 'x_{{{0},{1}}}'.format(u,v)
+        if u <= v:
+            return 'x_{{{0},{1}}}'.format(u, v)
         else:
-            return 'x_{{{0},{1}}}'.format(v,u)
+            return 'x_{{{0},{1}}}'.format(v, u)
 
     for u in Left:
-        for v in neighbors(B,u):
-            ssc.add_variable(var_name(u,v))
-        
+        for v in neighbors(B, u):
+            ssc.add_variable(var_name(u, v))
+
     for u in Left:
-        edge_vars = [ var_name(u,v) for v in neighbors(B,u) ]
+        edge_vars = [var_name(u, v) for v in neighbors(B, u)]
 
         if equalities:
             ssc.add_exactly_half_ceil(edge_vars)
@@ -106,32 +107,29 @@ def SubsetCardinalityFormula(B, equalities = False):
             ssc.add_loose_majority(edge_vars)
 
     for v in Right:
-        edge_vars = [ var_name(u,v) for u in neighbors(B,v) ]
+        edge_vars = [var_name(u, v) for u in neighbors(B, v)]
 
         if equalities:
             ssc.add_exactly_half_floor(edge_vars)
         else:
             ssc.add_loose_minority(edge_vars)
-    
+
     return ssc
-
-
 
 
 @cnfformula.cmdline.register_cnfgen_subcommand
 class SCCmdHelper(object):
-    name='subsetcard'
-    description='subset cardinality formulas'
+    name = 'subsetcard'
+    description = 'subset cardinality formulas'
 
     @staticmethod
     def setup_command_line(parser):
 
-        parser.add_argument('--equal','-e',default=False,action='store_true',
+        parser.add_argument('--equal', '-e', default=False, action='store_true',
                             help="encode cardinality constraints as equations")
         BipartiteGraphHelper.setup_command_line(parser)
 
     @staticmethod
     def build_cnf(args):
         B = BipartiteGraphHelper.obtain_graph(args)
-        return SubsetCardinalityFormula(B,args.equal)
-
+        return SubsetCardinalityFormula(B, args.equal)

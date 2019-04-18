@@ -2,7 +2,7 @@ from cnfformula.cnf import CNF
 
 from cnfformula.cmdline import BipartiteGraphHelper
 
-from cnfformula.graphs import bipartite_sets,enumerate_edges,neighbors
+from cnfformula.graphs import bipartite_sets, enumerate_edges, neighbors
 
 import cnfformula.families
 import cnfformula.cmdline
@@ -12,7 +12,7 @@ import cnfformula.encoding.constructs as fe
 import random
 import itertools
 
-from math import ceil,floor
+from math import ceil, floor
 
 from inspect import getdoc
 
@@ -22,10 +22,12 @@ https://github.com/StephanGocht/cnfgen
 
 """
 
+
 @cnfformula.families.register_cnf_generator
 def boundMatrix(*args, **kwargs):
     f = BoundMatrix(*args, **kwargs)
     return f.getFormula()
+
 
 class BoundMatrix:
     r"""
@@ -39,19 +41,22 @@ class BoundMatrix:
         \sum_{j \in [n]} a_{i,j} x_{i,j} \geq r_i
         \sum_{i \in [m]} a_{i,j} x_{i,j} \leq c_j
     """
-    def __init__(self, a, r, c, varOrder = None):
+
+    def __init__(self, a, r, c, varOrder=None):
         self.a = a
         self.numRows = len(self.a)
         self.numCols = len(self.a[0])
         for i in range(self.numRows):
             if len(self.a[i]) != self.numCols:
-                raise TypeError("Requiring a matrix that allows accessing by a[i][j] that has equal dimension in every row.")
+                raise TypeError(
+                    "Requiring a matrix that allows accessing by a[i][j] that has equal dimension in every row.")
             for j in range(self.numCols):
                 try:
                     if not isinstance(a[i][j], int):
                         raise TypeError("Requiring integer matrix.")
                 except LookupError:
-                    raise TypeError("Requiring a matrix that allows accessing by a[i][j] that has equal dimension in every row.")
+                    raise TypeError(
+                        "Requiring a matrix that allows accessing by a[i][j] that has equal dimension in every row.")
 
         self.r = r
         for i in range(self.numRows):
@@ -59,7 +64,8 @@ class BoundMatrix:
                 if not isinstance(r[i], int):
                     raise TypeError("Requiring integer matrix.")
             except LookupError:
-                raise TypeError("Requiring a matrix that allows accessing by a[i][j] that has equal dimension in every row.")
+                raise TypeError(
+                    "Requiring a matrix that allows accessing by a[i][j] that has equal dimension in every row.")
 
         self.c = c
         for j in range(self.numCols):
@@ -67,13 +73,13 @@ class BoundMatrix:
                 if not isinstance(c[j], int):
                     raise TypeError("Requiring integer matrix.")
             except LookupError:
-                raise TypeError("Requiring a matrix that allows accessing by a[i][j] that has equal dimension in every row.")
+                raise TypeError(
+                    "Requiring a matrix that allows accessing by a[i][j] that has equal dimension in every row.")
 
         if varOrder is None:
-            varOrder = itertools.product(range(self.numRows), range(self.numCols))
+            varOrder = itertools.product(
+                range(self.numRows), range(self.numCols))
         self.varOrder = varOrder
-
-
 
     def getFormula(self):
         self.f = CNF()
@@ -87,29 +93,31 @@ class BoundMatrix:
         for j in range(self.numCols):
             result.append(self.addColConstraint(j))
 
-        fe.toCNFgen(self.f,result)
+        fe.toCNFgen(self.f, result)
         return self.f
 
     def addRowConstraint(self, i):
-        return fe.GEQ([(self.a[i][j], self.x(i,j)) for j in range(self.numCols)], self.r[i])
+        return fe.GEQ([(self.a[i][j], self.x(i, j)) for j in range(self.numCols)], self.r[i])
 
     def addColConstraint(self, j):
-        return fe.LEQ([(self.a[i][j], self.x(i,j)) for i in range(self.numRows)], self.c[j])
+        return fe.LEQ([(self.a[i][j], self.x(i, j)) for i in range(self.numRows)], self.c[j])
 
     def addVariable(self, var):
         self.f.add_variable(var)
 
     def addAllVariables(self):
-        for i,j in self.varOrder:
-            self.addVariable(self.x(i,j))
+        for i, j in self.varOrder:
+            self.addVariable(self.x(i, j))
 
     def x(self, i, j):
-        return "x_{%i,%i}" % (i,j)
+        return "x_{%i,%i}" % (i, j)
+
 
 @cnfformula.families.register_cnf_generator
 def boundMatrixWithSplitConstraint(*args, **kwargs):
     f = BoundMatrixWithSplitConstraint(*args, **kwargs)
     return f.getFormula()
+
 
 class BoundMatrixWithSplitConstraint(BoundMatrix):
     r"""
@@ -131,6 +139,7 @@ class BoundMatrixWithSplitConstraint(BoundMatrix):
     Where :math:`h_i` is a fresh variable. For all other rows and
     columns the same constraints as in BoundMatrix are used.
     """
+
     def h(self, i):
         return "h_{%i}" % (i)
 
@@ -153,33 +162,37 @@ class BoundMatrixWithSplitConstraint(BoundMatrix):
         result = fe.And()
         result.append(
             fe.GEQ([(self.r[i], self.h(i))] +
-            [(self.a[i][j], self.x(i,j)) for j in T] +
-            [(self.a[i][j], self.x(i,j)) for j in F], self.r[i]))
+                   [(self.a[i][j], self.x(i, j)) for j in T] +
+                   [(self.a[i][j], self.x(i, j)) for j in F], self.r[i]))
 
         result.append(
             fe.GEQ([(self.r[i], fe.Not(self.h(i)))] +
-            [(self.a[i][j], self.x(i,j)) for j in T] +
-            [(self.a[i][j], self.x(i,j)) for j in S], self.r[i]))
+                   [(self.a[i][j], self.x(i, j)) for j in T] +
+                   [(self.a[i][j], self.x(i, j)) for j in S], self.r[i]))
 
         return result
+
 
 @cnfformula.families.register_cnf_generator
 def boundMatrixDoubleNotOne(*args, **kwargs):
     f = BoundMatrixDoubleNotOne(*args, **kwargs)
     return f.getFormula()
 
+
 class BoundMatrixDoubleNotOne(BoundMatrix):
     """
     For row constraints doubles all coefficients that are not equal to one.
     """
+
     def addRowConstraint(self, i):
-        f = lambda x: x if x == 1 else 2 * x
-        return fe.GEQ([(f(self.a[i][j]), self.x(i,j)) for j in range(self.numCols)], self.r[i])
+        def f(x): return x if x == 1 else 2 * x
+        return fe.GEQ([(f(self.a[i][j]), self.x(i, j)) for j in range(self.numCols)], self.r[i])
+
 
 @cnfformula.cmdline.register_cnfgen_subcommand
 class BoundMatrixHelper(object):
-    name='bound_matrix_strong_diagonal'
-    description='LEQ column constraints and GEQ row constraints'
+    name = 'bound_matrix_strong_diagonal'
+    description = 'LEQ column constraints and GEQ row constraints'
 
     @staticmethod
     def setup_command_line(parser):
@@ -187,38 +200,38 @@ class BoundMatrixHelper(object):
         \geq r and \sum_{i \in [m]} a_{i,j} x_{i,j} \leq c for a_{i,j} = r_i if i = j
         otherwise 1."""
 
-        parser.add_argument('--numRows','-m',type=int, required=True,
+        parser.add_argument('--numRows', '-m', type=int, required=True,
                             help="number of rows")
-        parser.add_argument('--numCols','-n',type=int, required=True,
+        parser.add_argument('--numCols', '-n', type=int, required=True,
                             help="number of columns")
-        parser.add_argument('--rowBound','-r',type=int, required=True,
+        parser.add_argument('--rowBound', '-r', type=int, required=True,
                             help="bound for every row constraint (greater or equal)")
-        parser.add_argument('--colBound','-c',type=int, required=True,
+        parser.add_argument('--colBound', '-c', type=int, required=True,
                             help="bound for every column constraint (less or equal)")
-        parser.add_argument('--diagonal','-d',type=int, required=False,
+        parser.add_argument('--diagonal', '-d', type=int, required=False,
                             help="Change the value for diagonal entries.")
 
-
-        parser.add_argument('--addOne','-a',default=False,action='store_true',
-                    help="add one to the rhs of a random row constraint")
-        parser.add_argument('--lastRowOne','-l',default=False,action='store_true',
-                    help="set the rhs of the last row to one")
-        parser.add_argument('--nonDiagonalFirst',default=False,action='store_true',
-                    help="change the variable order such that non diagonal entries have a smaller variable number")
+        parser.add_argument('--addOne', '-a', default=False, action='store_true',
+                            help="add one to the rhs of a random row constraint")
+        parser.add_argument('--lastRowOne', '-l', default=False, action='store_true',
+                            help="set the rhs of the last row to one")
+        parser.add_argument('--nonDiagonalFirst', default=False, action='store_true',
+                            help="change the variable order such that non diagonal entries have a smaller variable number")
 
         g = parser.add_mutually_exclusive_group()
-        g.add_argument('--splitRows','-s',default=False,action='store_true',
-                    help="split the row constrains in two halfs with helper variable")
+        g.add_argument('--splitRows', '-s', default=False, action='store_true',
+                       help="split the row constrains in two halfs with helper variable")
 
-        g.add_argument('--doubleDiagonal','-dd',default=False,action='store_true',
-                    help="Double the value in the diagonal for row constraints.")
+        g.add_argument('--doubleDiagonal', '-dd', default=False, action='store_true',
+                       help="Double the value in the diagonal for row constraints.")
 
     @staticmethod
     def build_cnf(args):
         if args.diagonal is None:
             args.diagonal = args.rowBound
 
-        a = [[1 if i != j else args.diagonal for j in range(args.numCols)] for i in range(args.numRows)]
+        a = [[1 if i != j else args.diagonal for j in range(
+            args.numCols)] for i in range(args.numRows)]
         r = [args.rowBound] * args.numRows
         c = [args.colBound] * args.numCols
         if args.lastRowOne:
@@ -229,15 +242,15 @@ class BoundMatrixHelper(object):
             r[u] += 1
 
         if args.nonDiagonalFirst:
-            varOrder = [(i,j) if j < i else (i,j+1) if j + 1 < args.numCols else (i,i)
-                for i in range(args.numRows)
-                    for j in range(args.numCols)]
+            varOrder = [(i, j) if j < i else (i, j+1) if j + 1 < args.numCols else (i, i)
+                        for i in range(args.numRows)
+                        for j in range(args.numCols)]
         else:
             varOrder = None
 
         if args.splitRows:
-            return boundMatrixWithSplitConstraint(a,r,c,varOrder)
+            return boundMatrixWithSplitConstraint(a, r, c, varOrder)
         elif args.doubleDiagonal:
-            return boundMatrixDoubleNotOne(a,r,c,varOrder)
+            return boundMatrixDoubleNotOne(a, r, c, varOrder)
         else:
-            return boundMatrix(a,r,c,varOrder)
+            return boundMatrix(a, r, c, varOrder)

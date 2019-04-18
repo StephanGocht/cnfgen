@@ -6,18 +6,17 @@
 from cnfformula.cnf import CNF
 from cnfformula.cmdline import SimpleGraphHelper
 
-from cnfformula.cmdline  import register_cnfgen_subcommand
+from cnfformula.cmdline import register_cnfgen_subcommand
 from cnfformula.families import register_cnf_generator
 
 from cnfformula.graphs import enumerate_vertices
-from itertools import combinations,product
-
-
+from itertools import combinations, product
 
 
 def _graph_isomorphism_var(u, v):
     """Standard variable name"""
     return "x_{{{0},{1}}}".format(u, v)
+
 
 @register_cnf_generator
 def GraphIsomorphism(G1, G2):
@@ -44,11 +43,11 @@ def GraphIsomorphism(G1, G2):
                G1.name + " and " + G2.name + "\n" + F.header
     F.mode_strict()
 
-    U=enumerate_vertices(G1)
-    V=enumerate_vertices(G2)
+    U = enumerate_vertices(G1)
+    V = enumerate_vertices(G2)
     var = _graph_isomorphism_var
 
-    for (u, v) in product(U,V):
+    for (u, v) in product(U, V):
         F.add_variable(var(u, v))
 
     # Defined on both side
@@ -79,6 +78,7 @@ def GraphIsomorphism(G1, G2):
 
     return F
 
+
 @register_cnf_generator
 def GraphAutomorphism(G):
     """Graph Automorphism formula
@@ -97,11 +97,11 @@ def GraphAutomorphism(G):
     nontrivial automorphism.
     """
     tmp = CNF()
-    header = "Graph automorphism formula for graph "+ G.name +"\n"+ tmp.header
+    header = "Graph automorphism formula for graph " + G.name + "\n" + tmp.header
     F = GraphIsomorphism(G, G)
     F.header = header
     F.mode_strict()
-    
+
     var = _graph_isomorphism_var
 
     F.add_clause([(False, var(u, u)) for u in enumerate_vertices(G)])
@@ -109,13 +109,12 @@ def GraphAutomorphism(G):
     return F
 
 
-
 @register_cnfgen_subcommand
 class GAutoCmdHelper(object):
     """Command line helper for Graph Automorphism formula
     """
-    name='gauto'
-    description='graph automorphism formula'
+    name = 'gauto'
+    description = 'graph automorphism formula'
 
     @staticmethod
     def setup_command_line(parser):
@@ -125,7 +124,6 @@ class GAutoCmdHelper(object):
         - `parser`: parser to load with options.
         """
         SimpleGraphHelper.setup_command_line(parser)
-
 
     @staticmethod
     def build_cnf(args):
@@ -138,13 +136,12 @@ class GAutoCmdHelper(object):
         return GraphAutomorphism(G)
 
 
-
 @register_cnfgen_subcommand
 class GIsoCmdHelper(object):
     """Command line helper for Graph Isomorphism formula
     """
-    name='giso'
-    description='graph isomorphism formula'
+    name = 'giso'
+    description = 'graph isomorphism formula'
 
     @staticmethod
     def setup_command_line(parser):
@@ -153,9 +150,8 @@ class GIsoCmdHelper(object):
         Arguments:
         - `parser`: parser to load with options.
         """
-        SimpleGraphHelper.setup_command_line(parser,suffix="1",required=True)
-        SimpleGraphHelper.setup_command_line(parser,suffix="2",required=True)
-
+        SimpleGraphHelper.setup_command_line(parser, suffix="1", required=True)
+        SimpleGraphHelper.setup_command_line(parser, suffix="2", required=True)
 
     @staticmethod
     def build_cnf(args):
@@ -164,8 +160,6 @@ class GIsoCmdHelper(object):
         Arguments:
         - `args`: command line options
         """
-        G1 = SimpleGraphHelper.obtain_graph(args,suffix="1")
-        G2 = SimpleGraphHelper.obtain_graph(args,suffix="2")
-        return GraphIsomorphism(G1,G2)
-
-
+        G1 = SimpleGraphHelper.obtain_graph(args, suffix="1")
+        G2 = SimpleGraphHelper.obtain_graph(args, suffix="2")
+        return GraphIsomorphism(G1, G2)

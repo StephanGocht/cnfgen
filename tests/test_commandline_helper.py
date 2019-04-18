@@ -5,6 +5,7 @@ import sys
 
 from cnfformula import cnfgen
 
+
 @contextmanager
 def stdout_redirector(stream):
     """Captures stdout during a test
@@ -16,6 +17,7 @@ def stdout_redirector(stream):
     yield
     sys.stdout = old_stdout
 
+
 @contextmanager
 def stderr_redirector(stream):
     """Captures stderr during a test
@@ -25,6 +27,7 @@ def stderr_redirector(stream):
     sys.stderr = stream
     yield
     sys.stderr = old_stderr
+
 
 @contextmanager
 def stdin_redirector(stream):
@@ -36,9 +39,9 @@ def stdin_redirector(stream):
     yield
     sys.stdin = old_stdin
 
-    
+
 class TestCommandline(unittest.TestCase):
-    
+
     def checkFormula(self, indata, expected_cnf, args, cmdline=cnfgen):
         """Test that a formula generation process produces the expected formula.
 
@@ -64,7 +67,7 @@ class TestCommandline(unittest.TestCase):
 
         cmdline: module
             reference to a module that contains `command_line_utility` method
-        
+
         Returns
         -------
         None
@@ -74,19 +77,20 @@ class TestCommandline(unittest.TestCase):
         AssertionError
 
         """
-        
+
         parameters = [str(x) for x in args]
         f = StringIO()
 
-        with stdout_redirector(f),stdin_redirector(indata):
-                cmdline(parameters)
-                
-        self.assertEqual(f.getvalue(),expected_cnf.dimacs(export_header=False)+'\n')
+        with stdout_redirector(f), stdin_redirector(indata):
+            cmdline(parameters)
+
+        self.assertEqual(f.getvalue(), expected_cnf.dimacs(
+            export_header=False)+'\n')
 
     def checkCrash(self, indata, args, cmdline=cnfgen):
         parameters = [str(x) for x in args]
         f = StringIO()
-        with stdin_redirector(indata),stderr_redirector(f), self.assertRaises(SystemExit) as cm:
-                cmdline(parameters)
+        with stdin_redirector(indata), stderr_redirector(f), self.assertRaises(SystemExit) as cm:
+            cmdline(parameters)
         self.assertNotEqual(cm.exception.code, 0)
-        self.assertNotEqual(f.getvalue(),'')
+        self.assertNotEqual(f.getvalue(), '')

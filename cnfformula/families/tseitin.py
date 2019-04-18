@@ -6,7 +6,7 @@
 from cnfformula.cnf import CNF
 
 from cnfformula.cmdline import SimpleGraphHelper
-from cnfformula.graphs import enumerate_vertices,neighbors
+from cnfformula.graphs import enumerate_vertices, neighbors
 
 import random
 import cnfformula.cmdline
@@ -14,8 +14,9 @@ import cnfformula.families
 
 import math
 
+
 @cnfformula.families.register_cnf_generator
-def TseitinFormula(graph,charges=None, encoding=None):
+def TseitinFormula(graph, charges=None, encoding=None):
     """Build a Tseitin formula based on the input graph.
 
     Odd charge is put on the first vertex by default, unless other
@@ -25,34 +26,34 @@ def TseitinFormula(graph,charges=None, encoding=None):
     - `graph`: input graph
     - `charges': odd or even charge for each vertex
     """
-    V=enumerate_vertices(graph)
+    V = enumerate_vertices(graph)
 
-    if charges==None:
-        charges=[1]+[0]*(len(V)-1)             # odd charge on first vertex
+    if charges == None:
+        charges = [1]+[0]*(len(V)-1)             # odd charge on first vertex
     else:
         charges = [bool(c) for c in charges]   # map to boolean
 
-    if len(charges)<len(V):
-        charges=charges+[0]*(len(V)-len(charges))  # pad with even charges
+    if len(charges) < len(V):
+        charges = charges+[0]*(len(V)-len(charges))  # pad with even charges
         assert False
 
     # init formula
-    tse=CNF()
-    edgename = { }
+    tse = CNF()
+    edgename = {}
 
-    for (u,v) in sorted(graph.edges(),key=sorted):
-        edgename[(u,v)] =  "E_{{{0},{1}}}".format(u,v)
-        edgename[(v,u)] =  "E_{{{0},{1}}}".format(u,v)
-        tse.add_variable(edgename[(u,v)])
+    for (u, v) in sorted(graph.edges(), key=sorted):
+        edgename[(u, v)] = "E_{{{0},{1}}}".format(u, v)
+        edgename[(v, u)] = "E_{{{0},{1}}}".format(u, v)
+        tse.add_variable(edgename[(u, v)])
 
     tse.mode_strict()
     # add constraints
-    for v,charge in zip(V,charges):
+    for v, charge in zip(V, charges):
 
         # produce all clauses and save half of them
-        names = [ edgename[(u,v)] for u in neighbors(graph,v) ]
+        names = [edgename[(u, v)] for u in neighbors(graph, v)]
         if encoding == None:
-            tse.add_parity(names,charge)
+            tse.add_parity(names, charge)
         else:
             def toArgs(listOfTuples, operator, degree):
                 return list(sum(listOfTuples, ())) + [operator, degree]
@@ -73,9 +74,9 @@ def TseitinFormula(graph,charges=None, encoding=None):
                     helpers.append(helper)
                     tse.add_variable(helper)
                     terms.append(((i+1)*2, helper))
-                tse.add_linear(*toArgs([(1,x) for x in helpers], "<=", 1))
+                tse.add_linear(*toArgs([(1, x) for x in helpers], "<=", 1))
             elif encoding == "extendedPBExpHelper":
-                for i in range(math.ceil(math.log(k,2)) + 1):
+                for i in range(math.ceil(math.log(k, 2)) + 1):
                     helper = ("xor_helper", i, v)
                     tse.add_variable(helper)
                     terms.append((2**i * 2, helper))
@@ -92,8 +93,8 @@ def TseitinFormula(graph,charges=None, encoding=None):
 class TseitinCmdHelper(object):
     """Command line helper for Tseitin  formulas
     """
-    name='tseitin'
-    description='tseitin formula'
+    name = 'tseitin'
+    description = 'tseitin formula'
 
     @staticmethod
     def setup_command_line(parser):
@@ -102,8 +103,9 @@ class TseitinCmdHelper(object):
         Arguments:
         - `parser`: parser to load with options.
         """
-        parser.add_argument('--charge',metavar='<charge>',default='first',
-                            choices=['first','random','randomodd','randomeven', '0','1'],
+        parser.add_argument('--charge', metavar='<charge>', default='first',
+                            choices=['first', 'random', 'randomodd',
+                                     'randomeven', '0', '1'],
                             help="""charge on the vertices.
                                     `first'  puts odd charge on first vertex;
                                     `random' puts a random charge on vertices;
@@ -112,15 +114,14 @@ class TseitinCmdHelper(object):
                                      """)
         group = parser.add_mutually_exclusive_group()
         group.add_argument("--extendedPBAnyHelper", action='store_true',
-            help="Encode xor as pseudo boolean constraint with extended variables.")
+                           help="Encode xor as pseudo boolean constraint with extended variables.")
         group.add_argument("--extendedPBOneHelper", action='store_true',
-            help="""Encode xor as pseudo boolean constraint with extended
+                           help="""Encode xor as pseudo boolean constraint with extended
                 variables, such that exactly one of the extension variables ist
                 true.""")
         group.add_argument("--extendedPBExpHelper", action='store_true',
-            help="""Encode xor as pseudo boolean constraint with extended
+                           help="""Encode xor as pseudo boolean constraint with extended
                 variables, using powers of two encoding.""")
-
 
         SimpleGraphHelper.setup_command_line(parser)
 
@@ -133,29 +134,30 @@ class TseitinCmdHelper(object):
         """
         G = SimpleGraphHelper.obtain_graph(args)
 
-        if G.order()<1:
-            charge=None
+        if G.order() < 1:
+            charge = None
 
-        elif args.charge=='first':
+        elif args.charge == 'first':
 
-            charge=[1]+[0]*(G.order()-1)
+            charge = [1]+[0]*(G.order()-1)
 
         elif args.charge in ['0', '1']:
             charge = [int(args.charge)] * G.number_of_nodes()
 
-        else: # random vector
-            charge=[random.randint(0,1) for _ in range(G.order()-1)]
+        else:  # random vector
+            charge = [random.randint(0, 1) for _ in range(G.order()-1)]
 
-            parity=sum(charge) % 2
+            parity = sum(charge) % 2
 
-            if args.charge=='random':
-                charge.append(random.randint(0,1))
-            elif args.charge=='randomodd':
+            if args.charge == 'random':
+                charge.append(random.randint(0, 1))
+            elif args.charge == 'randomodd':
                 charge.append(1-parity)
-            elif args.charge=='randomeven':
+            elif args.charge == 'randomeven':
                 charge.append(parity)
             else:
-                raise ValueError('Illegal charge specification on command line')
+                raise ValueError(
+                    'Illegal charge specification on command line')
 
         encoding = None
         if args.extendedPBAnyHelper:

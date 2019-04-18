@@ -4,7 +4,8 @@
 """
 
 
-__cnf_transformation_mark = "_is_cnf_transformation" 
+__cnf_transformation_mark = "_is_cnf_transformation"
+
 
 def register_cnf_transformation(func):
     """Register the function as a formula generator
@@ -28,7 +29,7 @@ def register_cnf_transformation(func):
 
     """
     assert callable(func)
-    setattr(func,__cnf_transformation_mark,True)
+    setattr(func, __cnf_transformation_mark, True)
     return func
 
 
@@ -44,4 +45,4 @@ def is_cnf_transformation(func):
     -------
     bool
     """
-    return hasattr(func,__cnf_transformation_mark)
+    return hasattr(func, __cnf_transformation_mark)
