@@ -134,11 +134,13 @@ class CNF(object):
           - :py:attr:`allow_literal_repetition`
           - :py:attr:`allow_opposite_literals`
           - :py:attr:`auto_add_variables`
+          - :py:meth:`CNF.allow_readd_variables`
 
         """
         self.allow_literal_repetitions = False
         self.allow_opposite_literals   = False
         self.auto_add_variables        = False
+        self.allow_readd_variables     = False
 
     def mode_unchecked(self):
         """Constraints are added with no rule
@@ -147,11 +149,13 @@ class CNF(object):
           - :py:meth:`CNF.allow_literal_repetitions`
           - :py:meth:`CNF.allow_opposite_literals`
           - :py:meth:`CNF.auto_add_variables`
+          - :py:meth:`CNF.allow_readd_variables`
 
         """
         self.allow_literal_repetitions = True
         self.allow_opposite_literals   = True
         self.auto_add_variables        = True
+        self.allow_readd_variables     = True
 
     def mode_default(self):
         """Constraint are added with default rules
@@ -159,6 +163,7 @@ class CNF(object):
         In particular this sets to `False`:
           - :py:meth:`CNF.allow_literal_repetitions`
           - :py:meth:`CNF.allow_opposite_literals`
+          - :py:meth:`CNF.allow_readd_variables`
 
         and sets to `True`:
           - :py:meth:`CNF.auto_add_variables`
@@ -167,6 +172,7 @@ class CNF(object):
         self.allow_literal_repetitions   = False
         self.allow_opposite_literals     = False
         self.auto_add_variables          = True
+        self.allow_readd_variables       = False
 
     @property
     def allow_literal_repetitions(self):
@@ -229,6 +235,16 @@ class CNF(object):
         else:
             self._check_and_compress_literals = self._check_and_compress_literals_safe
 
+    @property
+    def allow_readd_variables(self):
+        """If `True` variables with the same name can be added mutliple times.
+        (default: False)
+        """
+        return self._allow_readd_variables
+
+    @allow_readd_variables.setter
+    def allow_readd_variables(self,value):
+        self._allow_readd_variables = value
 
     #
     # Implementation of some standard methods
@@ -500,7 +516,7 @@ class CNF(object):
     #
     # High level API
     #
-    def add_variable(self,var,description=None,failOnDuplicate=True):
+    def add_variable(self,var,description=None):
         """Add a variable to the formula (if not already resent).
 
         The variable must be `hashable`. I.e. it must be usable as key
@@ -520,7 +536,7 @@ class CNF(object):
                 # name correpsond to the last variable so far
                 self._index2name.append(var)
                 self._name2index[var] = len(self._index2name)-1
-            elif failOnDuplicate:
+            elif not self.allow_readd_variables:
                 raise DuplicateVariable(
                     "Tried to add duplicate of variable %s" % str(var))
         except TypeError:
