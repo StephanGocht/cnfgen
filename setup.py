@@ -22,10 +22,10 @@ setup(
             'cnfshuffle=cnfformula.utils.cnfshuffle:command_line_utility',
             'cnftransform=cnfformula.utils.dimacstransform:command_line_utility'],
     },
-    install_requires=['networkx>=1.9,<2.0','pydotplus'],
+    install_requires=['networkx>2.0','pydotplus'],
     # make some tests
     test_suite='nose.collector',
     tests_require=['nose'],
     # only for python 2
-    python_requires='>=2.7,<3.0'
+    python_requires='~=3.0'
 )
