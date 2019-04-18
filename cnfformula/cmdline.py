@@ -327,7 +327,7 @@ class DirectedAcyclicGraphHelper(GraphHelper):
             if layer is None:
                 layer = 1
             D = dag_permutation(
-                getattr(args, 'permutation'+suffix), args.layer)
+                getattr(args, 'permutation'+suffix), layer)
 
         elif getattr(args, 'graphformat'+suffix) is not None:
 
