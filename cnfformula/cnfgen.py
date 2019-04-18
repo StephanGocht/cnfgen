@@ -50,7 +50,6 @@ except ImportError:
 #          Command line tool follows
 #################################################################
 
-
 ###
 ### Command line helpers
 ###
@@ -93,6 +92,9 @@ def setup_command_line_args(parser):
                    help="""Output formula header and comments.""")
     g.add_argument('--quiet', '-q',action='store_false',dest='verbose',
                    help="""Output just the formula with no header.""")
+    parser.add_argument('--debug', '-d',action='store_true',default=False,
+                   help="""Issue debug information.""")
+
 
 
 
@@ -148,6 +150,7 @@ def command_line_utility(argv=sys.argv):
     from cnfformula.cmdline import is_cnfgen_subcommand
     from cnfformula.cmdline import is_cnf_transformation_subcommand
     from cnfformula.cmdline import find_methods_in_package
+    from cnfformula.cmdline import ArgumentParsingException
 
 
     # Cmdline parser for formula transformations
@@ -189,7 +192,7 @@ a sequence of transformations.
                                       sortkey=lambda x:x.name):
         p=subparsers.add_parser(sc.name,help=sc.description)
         sc.setup_command_line(p)
-        p.set_defaults(generator=sc)
+        p.set_defaults(generator=sc, subparser=p)
 
 
 
@@ -222,9 +225,14 @@ a sequence of transformations.
     # Generate the formula
     try:
         cnf = args.generator.build_cnf(args)
-    except ValueError as e:
-        print(e, file=sys.stderr)
-        sys.exit(os.EX_DATAERR)
+    except ArgumentParsingException as e:
+        args.subparser.error(str(e))
+    except Exception as e:
+        if args.debug:
+            raise e
+        else:
+            print(e, file=sys.stderr)
+            sys.exit(os.EX_DATAERR)
 
 
     # Apply the sequence of transformations

@@ -40,6 +40,7 @@ import sys
 import io
 import io
 import os
+import random
 
 try:
     import networkx
@@ -1129,6 +1130,48 @@ def dag_complete_binary_tree(height):
     for i in range(len(vert)//2):
         D.add_edge(vert[N-2*i-1],vert[N-i])
         D.add_edge(vert[N-2*i-2],vert[N-i])
+
+    return D
+
+def dag_permutation(n, k):
+    r"""Generates a permutation graph.
+
+    A permutation graph consists of nodes :math:`V = \{(i,j) | i \in [k + 1], j \in [n] \}`
+    and edges between consecutive elements in each layer `((i,j); (i, j  + 1)) \in E,  i \in [k + 1], j \in [n - 1]`
+    and edges between consecutive layers according to a random permutation :math:`\sigma_i, i \in [k]`
+        `((i,j); (i + 1, \sigma_i(j))) \in E,  i \in [k], j \in [i]`.
+
+    Parameters
+    ----------
+    n : int
+        number of elements to be permutated.
+
+    k : int
+        number of layers.
+
+
+    Returns
+    -------
+    networkx.DiGraph
+    """
+    D=networkx.DiGraph()
+    D.name='Permutation graph with %(n)i elements and %(k)i layers' % {"n": n, "k": k}
+    D.ordered_vertices=[]
+    vertices = [["(%i, %i)"%(i,j) for i in range(n)] for j in range(k + 1)]
+    for i in range(k + 1):
+        for j in range(n):
+            D.add_node(vertices[i][j])
+            D.ordered_vertices.append(vertices[i][j])
+
+    for i in range(k + 1):
+        for j in range(n - 1):
+            D.add_edge(vertices[i][j], vertices[i][j + 1])
+
+    for i in range(k):
+        permutation = list(range(n))
+        random.shuffle(permutation)
+        for j in range(n):
+            D.add_edge(vertices[i][j], vertices[i + 1][permutation[j]])
 
     return D
 

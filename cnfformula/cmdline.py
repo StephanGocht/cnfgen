@@ -26,7 +26,7 @@ from .graphs import supported_formats as graph_formats
 from .graphs import readGraph,writeGraph
 from .graphs import bipartite_random_left_regular,bipartite_random_regular,bipartite_shift
 from .graphs import bipartite_sets
-from .graphs import dag_complete_binary_tree,dag_pyramid
+from .graphs import dag_complete_binary_tree,dag_pyramid,dag_permutation
 from .graphs import sample_missing_edges
 
 
@@ -50,6 +50,9 @@ __all__ = [ "register_cnfgen_subcommand","is_cnfgen_subcommand",
 
 
 __cnfgen_subcommand_mark = "_is_cnfgen_subcommand"
+
+class ArgumentParsingException(RuntimeError):
+    pass
 
 def register_cnfgen_subcommand(cls):
     """Register the class as a formula subcommand
@@ -259,6 +262,7 @@ class DirectedAcyclicGraphHelper(GraphHelper):
             Not a good idea if we read multiple graphs in input.
         """
 
+        # store parser object to appropriately throw an exception when bad combinations are used.
         gr=parser.add_argument_group(title="Input directed acyclic graph (DAG) " + suffix,
                                      description="""
                                      You can either read the input DAG from file according to one of
@@ -278,6 +282,12 @@ class DirectedAcyclicGraphHelper(GraphHelper):
 
         gr.add_argument('--pyramid'+suffix,type=positive_int,action='store',metavar="<height>",
                             help="pyramid digraph")
+
+        gr.add_argument('--permutation'+suffix,type=positive_int,action='store',metavar="<n>",
+                            help="Random permutation graph with n elements.")
+
+        parser.add_argument('--layer'+suffix,type=positive_int,action='store',metavar="<k>",
+                            help="Number of layers when constructing a permutation graph (requires --permutation).")
 
         gr=parser.add_argument_group("I/O options")
 
@@ -300,6 +310,11 @@ class DirectedAcyclicGraphHelper(GraphHelper):
     def obtain_graph(args,suffix=""):
         """Produce a DAG from either input or library
         """
+
+        if getattr(args, 'layer' + suffix) is not None \
+            and getattr(args, 'permutation' + suffix) is None:
+                raise ArgumentParsingException("argument --layer can only be used when argument --permutation is set as well.")
+
         if getattr(args,'tree'+suffix) is not None:
             assert getattr(args,'tree'+suffix) > 0
 
@@ -309,6 +324,12 @@ class DirectedAcyclicGraphHelper(GraphHelper):
             assert getattr(args,'pyramid'+suffix) > 0
 
             D = dag_pyramid( getattr(args,'pyramid'+suffix))
+
+        elif getattr(args, 'permutation'+suffix) is not None:
+            layer = getattr(args, 'layer' + suffix)
+            if layer is None:
+                layer = 1
+            D = dag_permutation(getattr(args, 'permutation'+suffix), args.layer)
 
         elif getattr(args,'graphformat'+suffix) is not None:
 

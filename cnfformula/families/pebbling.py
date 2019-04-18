@@ -27,7 +27,7 @@ import sys
 def _uniqify_list(seq):
     """Remove duplicates while maintaining the order.
 
-    (due to Dave Kirby) 
+    (due to Dave Kirby)
 
     Seen on https://www.peterbe.com/plog/uniqifiers-benchmark
     """
@@ -119,12 +119,12 @@ def stone_formula_helper(F,D,mapping):
     for stone in mapping.range():
         F.add_variable("R_{{{0}}}".format(stone),
                        description="Stone ${}$ is red".format(stone))
-    
+
     # Each vertex has some stone
     F.mode_unchecked()
     for cls in mapping.clauses():
         F.add_clause(cls)
-        
+
     # If predecessors have red stones, the sink must have a red stone
     F.mode_default()
     for v in vertices:
@@ -135,7 +135,7 @@ def stone_formula_helper(F,D,mapping):
                                [(False, mapping.var_name(v,j))] +
                                [(False, "R_{{{0}}}".format(s)) for s in _uniqify_list(stones_tuple)] +
                                [(True,  "R_{{{0}}}".format(j))])
-        
+
         if D.out_degree(v)==0: #the sink
             for j in mapping.images(v):
                 F.add_clause([ (False, mapping.var_name(v,j)),
@@ -186,7 +186,7 @@ def StoneFormula(D,nstones):
     ------
     ValueError
        if :math:`D` is not a directed acyclic graph
-    
+
     ValueError
        if the number of stones is negative
 
@@ -202,7 +202,7 @@ def StoneFormula(D,nstones):
     """
     if not is_dag(D):
         raise ValueError("Stone formulas are defined only for directed acyclic graphs.")
-    
+
     if nstones<0:
         raise ValueError("There must be at least one stone.")
 
@@ -222,11 +222,11 @@ def StoneFormula(D,nstones):
     # Caching variable names
     color_vn = {}
     stone_vn = {}
-    
+
     # Stones->Vertices variables
     for v in vertices:
         for j in stones:
-            stone_vn[(v,j)] = "P_{{{0},{1}}}".format(v,j) 
+            stone_vn[(v,j)] = "P_{{{0},{1}}}".format(v,j)
             cnf.add_variable(stone_vn[(v,j)],
                              description="Stone ${1}$ on vertex ${0}$".format(v,j))
 
@@ -235,11 +235,11 @@ def StoneFormula(D,nstones):
         color_vn[j] = "R_{{{0}}}".format(j)
         cnf.add_variable(color_vn[j],
                          description="Stone ${}$ is red".format(j))
-    
+
     # Each vertex has some stone
     for v in vertices:
         cnf.add_clause([(True,stone_vn[(v,j)]) for j in stones])
-        
+
     # If predecessors have red stones, the sink must have a red stone
     for v in vertices:
         for j in stones:
@@ -249,7 +249,7 @@ def StoneFormula(D,nstones):
                                [(False, stone_vn[(v,j)])] +
                                [(False, color_vn[s]) for s in _uniqify_list(stones_tuple)] +
                                [(True,  color_vn[j])])
-        
+
         if D.out_degree(v)==0: #the sink
             for j in stones:
                 cnf.add_clause([ (False,stone_vn[(v,j)]), (False,color_vn[j])])
@@ -266,7 +266,7 @@ def SparseStoneFormula(D,B):
     vertex. In particular which stones are allowed on each vertex is
     specified by a bipartite graph :math:`B` on which the left
     vertices represent the vertices of DAG :math:`D` and the right
-    vertices are the stones. 
+    vertices are the stones.
 
     If a vertex of :math:`D` correspond to the left vertex :math:`v`
     in :math:`B`, then its neighbors describe which stones are allowed
@@ -296,7 +296,7 @@ def SparseStoneFormula(D,B):
     ------
     ValueError
        if :math:`D` is not a directed acyclic graph
-    
+
     ValueError
        if :math:`B` is not a bipartite graph
 
@@ -314,15 +314,15 @@ def SparseStoneFormula(D,B):
 
     if not has_bipartition(B):
         raise ValueError("Vertices to stones mapping must be specified with a bipartite graph")
-    
+
     Left, Right = bipartite_sets(B)
     nstones = len(Right)
 
     if len(Left) != D.order():
         raise ValueError("Formula requires the bipartite left side to match #vertices of the DAG.")
-     
+
     cnf = CNF()
-    
+
     if hasattr(D, 'name'):
         cnf.header = "Sparse Stone formula of: " + D.name + "\nwith " + str(nstones) + " stones\n" + cnf.header
     else:
@@ -331,7 +331,7 @@ def SparseStoneFormula(D,B):
     # add variables in the appropriate order
     vertices=enumerate_vertices(D)
     stones=list(range(1,nstones+1))
-    
+
     mapping = cnf.unary_mapping(vertices,stones,sparsity_pattern=B)
 
     stone_formula_helper(cnf,D,mapping)
@@ -362,11 +362,7 @@ class PebblingCmdHelper:
         - `args`: command line options
         """
         D= DirectedAcyclicGraphHelper.obtain_graph(args)
-        try:
-            return PebblingFormula(D)
-        except ValueError as e:
-            print("\nError: {}".format(e),file=sys.stderr)
-            sys.exit(-1)
+        return PebblingFormula(D)
 
 @cnfformula.cmdline.register_cnfgen_subcommand
 class StoneCmdHelper:
@@ -375,7 +371,7 @@ class StoneCmdHelper:
     name='stone'
     description='stone formula'
     __doc__ = StoneFormula.__doc__
-    
+
     @staticmethod
     def setup_command_line(parser):
         """Setup the command line options for stone formulas
@@ -394,11 +390,7 @@ class StoneCmdHelper:
         - `args`: command line options
         """
         D= DirectedAcyclicGraphHelper.obtain_graph(args)
-        try:
-            return StoneFormula(D,args.s)
-        except ValueError as e :
-            print("\nError: {}".format(e),file=sys.stderr)
-            sys.exit(-1)
+        return StoneFormula(D,args.s)
 
 @cnfformula.cmdline.register_cnfgen_subcommand
 class SparseStoneCmdHelper:
@@ -407,7 +399,7 @@ class SparseStoneCmdHelper:
     name='stonesparse'
     description='stone formula (sparse version)'
     __doc__ = SparseStoneFormula.__doc__
-    
+
     @staticmethod
     def setup_command_line(parser):
         """Setup the command line options for stone formulas
@@ -427,10 +419,4 @@ class SparseStoneCmdHelper:
         """
         D= DirectedAcyclicGraphHelper.obtain_graph(args)
         B= BipartiteGraphHelper.obtain_graph(args,suffix="_mapping")
-        try:
-            return SparseStoneFormula(D,B)
-        except ValueError as e:
-            print("\nError: {}".format(e),file=sys.stderr)
-            sys.exit(-1)
-
-            
+        return SparseStoneFormula(D,B)

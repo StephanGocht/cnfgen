@@ -47,6 +47,7 @@ class BaseSubstitution(CNF):
             substitutions[-i]=self.transform_a_literal(False,variablenames[i])
 
 
+        self.allow_readd_variables = True
         # Collect new variable names from the CNFs:
         # clause compression needs the variable names
         if new_variables is None:
@@ -186,8 +187,8 @@ class MajoritySubstitution(BaseSubstitution):
             temp.add_strictly_less_than(variables,threshold)
 
         return list(temp)
-        
-        
+
+
 
 @register_cnf_transformation
 class OrSubstitution(BaseSubstitution):
@@ -208,8 +209,8 @@ class OrSubstitution(BaseSubstitution):
         self._header="OR {} substituted formula\n\n".format(self._rank) \
             +self._header
 
-        
-        
+
+
     def transform_a_literal(self, polarity,varname):
         """Substitute a positive literal with an OR,
         and negative literals with its negation.
@@ -320,9 +321,9 @@ class XorSubstitution(BaseSubstitution):
         """
         temp = CNF()
         temp.add_parity(["{{{}}}^{}".format(varname,i) for i in range(self._rank)],
-                        1 if polarity else 0)    
+                        1 if polarity else 0)
         return list(temp)
-    
+
 @register_cnf_transformation
 class FormulaLifting(BaseSubstitution):
     """Formula lifting: Y variable select X values
@@ -352,7 +353,7 @@ class FormulaLifting(BaseSubstitution):
         """
         selector_clauses=[]
         selector_clauses.append([ (True,   "Y_{{{}}}^{}".format(name,i)) for i in range(self._rank)])
-        
+
         for s1,s2 in combinations(["Y_{{{}}}^{}".format(name,i) for i in range(self._rank)],2):
                 selector_clauses.append([(False,s1),(False,s2)])
 
@@ -406,7 +407,7 @@ class ExactlyOneSubstitution(BaseSubstitution):
         """
         clauses=[]
         varnames=["X_{{{}}}^{}".format(varname,i) for i in range(self._rank)]
-        
+
         if polarity:
             # at least one variable is true
             clauses.append([ (True,name) for name in varnames ])
@@ -423,8 +424,8 @@ class ExactlyOneSubstitution(BaseSubstitution):
 
 @register_cnf_transformation
 class VariableCompression(BaseSubstitution):
-    """Vabiable compression transformation 
-    
+    """Vabiable compression transformation
+
     The original variable are substituted with the XOR (or MAJ) of
     a subset of a new set of variables (usually smaller).
     """
@@ -432,7 +433,7 @@ class VariableCompression(BaseSubstitution):
     _name_vertex_dict={}
     _pattern  = None
     _function = None
-    
+
     def __init__(self, cnf, B, function='xor'):
         """Build a new CNF obtained by substituting a XOR to the
         variables of the original CNF.
@@ -444,8 +445,8 @@ class VariableCompression(BaseSubstitution):
         B : networkx.Graph
             a bipartite graph. The right side must have the number of
             vertices equal to the number of original variables
-        
-        function: string 
+
+        function: string
             Select which faction is used for the compression. It must
             be one among 'xor' or 'maj'.
 
@@ -462,7 +463,7 @@ class VariableCompression(BaseSubstitution):
         self._function = function
         for n,v in zip(cnf.variables(),Right):
             self._name_vertex_dict[n]=v
-            
+
         super(VariableCompression,self).__init__(cnf, new_variables = ["Y_{{{0}}}".format(i) for i in Left])
 
         self._header="Variable {}-compression from {} to {} variables\n\n".format(function,len(Right),len(Left)) \
@@ -495,10 +496,10 @@ class VariableCompression(BaseSubstitution):
                 return list(self.greater_or_equal_constraint(local_names, threshold ))
             else:
                 return list(self.less_than_constraint(local_names, threshold ))
-            
+
         else:
             raise RuntimeError("Error: variable compression with invalid function")
-            
+
 #
 # Command line helpers for these substitutions
 #
@@ -588,7 +589,7 @@ class IfThenElseSubstitutionCmd:
     @staticmethod
     def setup_command_line(parser):
         pass
-    
+
     @staticmethod
     def transform_cnf(F,args):
         return  IfThenElseSubstitution(F)
@@ -601,7 +602,7 @@ class ExactlyOneSubstitutionCmd:
     @staticmethod
     def setup_command_line(parser):
         parser.add_argument('N',type=int,nargs='?',default=3,action='store',help="arity (default: 3)")
-    
+
     @staticmethod
     def transform_cnf(F,args):
         return  ExactlyOneSubstitution(F,args.N)
@@ -613,7 +614,7 @@ class ExactlyOneSubstitutionCmd:
 # this one.
 @register_cnf_transformation_subcommand
 class FormulaLiftingCmd:
-    """Lifting 
+    """Lifting
     """
     name='lift'
     description='one dimensional lifting  x -->  x1 y1  OR ... OR xN yN, with y1+..+yN = 1'
@@ -621,7 +622,7 @@ class FormulaLiftingCmd:
     @staticmethod
     def setup_command_line(parser):
         parser.add_argument('N',type=int,nargs='?',default=3,action='store',help="arity (default: 3)")
-    
+
     @staticmethod
     def transform_cnf(F,args):
         return FormulaLifting(F,args.N)
@@ -635,7 +636,7 @@ class XorCompressionCmd:
     @staticmethod
     def setup_command_line(parser):
         BipartiteGraphHelper.setup_command_line(parser)
-        
+
     @staticmethod
     def transform_cnf(F,args):
         B = BipartiteGraphHelper.obtain_graph(args)
@@ -646,7 +647,7 @@ class XorCompressionCmd:
             print("ERROR: {}".format(e),file=sys.stderr)
             exit(-1)
 
-        
+
 @register_cnf_transformation_subcommand
 class MajCompressionCmd:
     name='majcomp'
@@ -655,7 +656,7 @@ class MajCompressionCmd:
     @staticmethod
     def setup_command_line(parser):
         BipartiteGraphHelper.setup_command_line(parser)
-        
+
     @staticmethod
     def transform_cnf(F,args):
         B = BipartiteGraphHelper.obtain_graph(args)
