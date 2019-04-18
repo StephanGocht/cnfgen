@@ -13,10 +13,145 @@ import cnfformula.cnf as cnf
 
 # a literal is anything hashable
 
-class And(list):
+class Visitor(object):
+    def visit(self, node, *args, **kwargs):
+        meth = None
+        for cls in node.__class__.__mro__:
+            meth_name = 'visit_' + cls.__name__
+            meth = getattr(self, meth_name, None)
+            if meth:
+                break
+
+        if not meth:
+            meth = self.genericVisit
+        return meth(node, *args, **kwargs)
+
+    def genericVisit(self, x):
+        raise NotImplementedError()
+
+def join(klass, a, b):
+    result = klass()
+    if isinstance(a, klass):
+        result.extend(a)
+    else:
+        result.append(a)
+
+    if isinstance(b, klass):
+        result.extend(b)
+    else:
+        result.append(b)
+
+    return result
+
+
+class OPTree:
+    def __invert__(self):
+        return negate(self)
+
+    def __and__(self, other):
+        return join(And, self, other)
+
+    def __or__(self, other):
+        return join(Or, self, other)
+
+    def __radd__(self, other):
+        return self + other
+
+    def __add__(self, other):
+        if other is 0:
+            other = Sum()
+        return join(Sum, self, other)
+
+    def __rmul__(self, other):
+        return self * other
+
+    def __mul__(self, other):
+        if other is 1:
+            return self
+        return join(Product, self, other)
+
+    def __eq__(self, other):
+        return (self <= other) & (self >= other)
+
+    def __le__(self, other):
+        return LEQ(*standardize(self, other))
+
+    def __ge__(self, other):
+        return GEQ(*standardize(self, other))
+
+    def __lt__(self, other):
+        return LT(*standardize(self, other))
+
+    def __gt__(self, other):
+        return GT(*standardize(self, other))
+
+    def __neg__(self):
+        return -1 * self
+
+    def __rsub__(self, other):
+        return other + (-self)
+
+    def __sub__(self, other):
+        return self + (-other)
+
+def standardize(left, right):
+    visitor = Convert2Terms()
+
+    terms = visitor.visit(left)
+
+    termsRight = visitor.visit(right)
+    terms.extend([-coeff, var] for coeff, var in termsRight)
+
+    const = sum([coeff for coeff, var in terms if var is None])
+    const *= -1
+    terms = [(coeff, var) for coeff, var in terms if var is not None]
+
+    return terms, const
+
+
+class Convert2Terms(Visitor):
+    def genericVisit(self, x):
+        if isinstance(x, int):
+            return [(x, None)]
+        else:
+            return [(1, x)]
+
+    def visit_Product(self, x):
+        factor = 1
+        var = None
+        for y in x:
+            if isinstance(y, int):
+                factor *= y
+            elif var is None:
+                var = y
+            else:
+                raise RuntimeError("Trying to convert multiply with more than one non integer.")
+
+        if isinstance(var, Sum):
+            return [(factor * coeff, var) for coeff, var in self.visit(var)]
+        else:
+            return [(factor, var)]
+
+    def visit_Sum(self, x):
+        result = list()
+        for y in x:
+            result.extend(self.visit(y))
+        return result
+
+
+class Sum(OPTree, list):
     pass
 
-class Not():
+class Product(OPTree, list):
+    pass
+
+class Term(OPTree, list):
+    pass
+
+class And(OPTree, list):
+    pass
+
+class Not(OPTree):
     def __init__(self, x):
         self.x = x
 
@@ -28,13 +163,13 @@ def normalizeNot(x):
         x = x.x.x
     return x
 
-class Or(list):
+class Or(list, OPTree):
     pass
 
-class Clause(Or):
+class Clause(Or, OPTree):
     pass
 
-class Inequality():
+class Inequality(OPTree):
     """
     creates sum of terms greater equal rhs
     """
@@ -123,22 +258,6 @@ class LT(LEQ):
     def __init__(self, terms, rhs):
         super().__init__(terms, rhs - 1)
 
-
-class Visitor(object):
-    def visit(self, node, *args, **kwargs):
-        meth = None
-        for cls in node.__class__.__mro__:
-            meth_name = 'visit_' + cls.__name__
-            meth = getattr(self, meth_name, None)
-            if meth:
-                break
-
-        if not meth:
-            meth = self.genericVisit
-        return meth(node, *args, **kwargs)
-
-    def genericVisit(x):
-        raise NotImplementedError()
 
 def transformToCNF(something):
     t = TransformToCNF()
@@ -272,13 +391,12 @@ class ToCNFgenVisitor(Visitor):
         ineq = ineq.normalizedVariables()
         self.cnf.add_linear(*toArgs(ineq.terms, ">=", ineq.rhs))
 
-class VarToInt():
+class VarToInt(dict):
     def __init__(self):
-        self.mapping = dict()
         self.varCount = 1
 
     def __getitem__(self,var):
-        value = self.mapping.setdefault(var, self.varCount)
+        value = self.setdefault(var, self.varCount)
         if value == self.varCount:
             self.varCount += 1
         return value
@@ -299,6 +417,8 @@ class ToOPBVisitor(Visitor):
     def printHeader(self):
         self.print = True
         print("* #variable= %i #constraint= %i"%(self.vars.varCount - 1, self.constraintCount))
+        for var, value in self.vars.items():
+            print("* %s = x%i"%(str(var), value))
 
     def genericVisit(self, x):
         self.visit(transformToCNF(x))
