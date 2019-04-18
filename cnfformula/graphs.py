@@ -257,7 +257,18 @@ def readGraph(input_file, graph_type, file_format='autodetect', multi_edges=Fals
     elif file_format == 'gml':
 
         try:
-            G = grtype(networkx.read_gml(input_file))
+            # networkx is currently buggy on TextIO as it is trying to use .decode() on str
+            # so try to get the underlying buffer instead.
+            if isinstance(input_file, io.TextIOBase):
+                try:
+                    buffer = input_file.buffer
+                except AttributeError as e:
+                    raise e
+                    buffer = input_file
+            else:
+                buffer = input_file
+
+            G = grtype(networkx.read_gml(buffer))
         except networkx.NetworkXError as errmsg:
             raise ValueError("[Parse error in GML input] {} ".format(errmsg))
 
@@ -344,8 +355,17 @@ def writeGraph(G, output_file, graph_type, file_format='autodetect'):
         find_write_dot()(G, output_file)
 
     elif file_format == 'gml':
+        # networkx is currently buggy on TextIO as it is trying to use .decode() on str
+        # so try to get the underlying buffer instead.
+        if isinstance(output_file, io.TextIOBase):
+            try:
+                buffer = output_file.buffer
+            except AttributeError as e:
+                buffer = output_file
+        else:
+            buffer = output_file
 
-        networkx.write_gml(G, output_file)
+        networkx.write_gml(G, buffer)
 
     elif file_format == 'kthlist':
 

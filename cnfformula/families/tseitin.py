@@ -35,7 +35,6 @@ def TseitinFormula(graph, charges=None, encoding=None):
 
     if len(charges) < len(V):
         charges = charges+[0]*(len(V)-len(charges))  # pad with even charges
-        assert False
 
     # init formula
     tse = CNF()

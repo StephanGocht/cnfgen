@@ -7,7 +7,7 @@ from cnfformula.graphs import readGraph, writeGraph, supported_formats
 from cnfformula.graphs import find_read_dot, has_dot_library
 from cnfformula.graphs import bipartite_sets
 
-from io import StringIO as sio
+from io import BytesIO, TextIOWrapper
 import networkx as nx
 
 from . import example_filename
@@ -61,6 +61,8 @@ kthlist_bipartite = """
 4: 1 0
 """
 
+def sio(string):
+   return TextIOWrapper(BytesIO(string.encode('ascii')))
 
 class TestGraphIO(unittest.TestCase):
 
@@ -73,7 +75,7 @@ class TestGraphIO(unittest.TestCase):
 
     def test_low_level_gml_read_path2(self):
 
-        G = nx.read_gml(sio(gml_path2))
+        G = nx.read_gml(BytesIO(gml_path2.encode('ascii')))
 
         self.assertEqual(G.order(), 3)
         self.assertEqual(len(G.edges()), 2)

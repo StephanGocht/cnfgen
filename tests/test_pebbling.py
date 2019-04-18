@@ -58,7 +58,7 @@ class TestPebblingCommandline(TestCommandline):
         for sz in range(1, 5):
             G = nx.balanced_tree(2, sz, nx.DiGraph()).reverse()
             G = nx.relabel_nodes(
-                G, dict(list(zip(G.nodes(), reversed(G.nodes())))), True)
+                G, dict(list(zip(G.nodes(), reversed(list(G.nodes()))))), True)
             G.name = 'Complete binary tree of height {}'.format(sz)
             F = PebblingFormula(G)
             self.checkFormula(
