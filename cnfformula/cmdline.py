@@ -281,7 +281,7 @@ class DirectedAcyclicGraphHelper(GraphHelper):
                         help="pyramid digraph")
 
         gr.add_argument('--permutation'+suffix, type=positive_int, action='store', metavar="<n>",
-                        help="Random permutation graph with n elements.")
+                        help="Random permutation graph with n elements. See --layer for setting number of layers.")
 
         parser.add_argument('--layer'+suffix, type=positive_int, action='store', metavar="<k>",
                             help="Number of layers when constructing a permutation graph (requires --permutation).")
